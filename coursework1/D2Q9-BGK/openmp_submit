@@ -4,7 +4,7 @@
 #!
 #! Name of job
 
-#PBS -N OPENMP
+#PBS -N coursework_one
 #PBS -joe
 #PBS -o OUT
 #PBS -q veryshort
