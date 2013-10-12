@@ -1,0 +1,34 @@
+Running on host node072
+Time is Mon Oct 7 15:46:44 BST 2013
+Directory is /gpfs/cluster/cosc/dm1905/week2/openmp.r544/examples/example2
+PBS job ID is 626357.bluecrystal1.cm.cluster
+This jobs runs on the following machines:
+node072.cm.cluster
+Serial
+pi is:		3.1415926535904264
+error is:	0.0000000000006333
+
+real	0m1.101s
+user	0m1.099s
+sys	0m0.002s
+Parallel with arrays
+pi is:		3.1415926535896825
+error is:	0.0000000000001106
+
+real	0m3.384s
+user	0m12.445s
+sys	0m0.003s
+Parallel with private variable
+pi is:		3.1415926535896825
+error is:	0.0000000000001106
+
+real	0m0.305s
+user	0m1.184s
+sys	0m0.006s
+Parallel with reduction
+pi is:		3.1415926535896825
+error is:	0.0000000000001106
+
+real	0m0.311s
+user	0m1.216s
+sys	0m0.001s

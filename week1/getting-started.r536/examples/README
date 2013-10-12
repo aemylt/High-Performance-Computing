@@ -1,0 +1,36 @@
+# ===============
+# Getting started
+# ===============
+#
+# This tarball contains three examples.  The first two provide some practice
+# in submitting jobs to the cluster's queueing system.  You will need to use
+# the queuing system for much of your practical work on the course.
+#
+# In order to run the first two examples, you will need to have the following
+# modules loaded:
+
+torque/2.5.5
+maui/3.3.1
+base/infiniband-gcc
+
+# You can do this by putting:
+
+module add torque/2.5.5
+module add maui/3.3.1
+module add base/infiniband-gcc
+
+# in your ~/.bashrc file, for example.
+
+# Both of the submission scripts send your jobs to the 'veryshort' queue.
+# To submit a job:
+
+qsub job_submit
+
+# To look at the queue:
+
+showq | less
+
+# (hit 'q' to quit from less.)
+# The third example gives some practice in optimising serial code.  It covers
+# topics such as compiler flags, profiling tools and the choice of algorithm itself.
+

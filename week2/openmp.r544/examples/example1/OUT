@@ -1,0 +1,11 @@
+Running on host node056
+Time is Mon Oct 7 15:21:22 BST 2013
+Directory is /gpfs/cluster/cosc/dm1905/week2/openmp.r544/examples/example1
+PBS job ID is 626240.bluecrystal1.cm.cluster
+This jobs runs on the following machines:
+node056.cm.cluster
+Hello, world from thread = 0
+Hello, world from thread = 2
+Number of threads = 4
+Hello, world from thread = 3
+Hello, world from thread = 1

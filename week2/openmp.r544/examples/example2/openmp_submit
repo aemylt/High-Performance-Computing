@@ -1,0 +1,65 @@
+#!/bin/bash 
+#!
+#! Sample PBS file
+#!
+#! Name of job
+
+#PBS -N OPENMP
+#PBS -joe
+#PBS -o OUT
+#PBS -q veryshort
+
+#! Number of nodes (in this case 1 node with 8 CPU cores)
+#! The total number of nodes passed to mpirun will be nodes*ppn 
+#! Second entry: Total amount of wall-clock time (true time). 
+#! 02:00:00 indicates 02 hours
+
+#PBS -l nodes=1:ppn=4,walltime=00:05:00
+
+#! Mail to user if job aborts
+#PBS -m a
+
+#! Full path to application + application name
+application="./serial_pi.exe"
+
+#! Full path to application in parallel array
+parallel_array_application="./parallel_array_pi.exe"
+
+#! Full path to application in parallel private variable
+parallel_private_application="./parallel_private_pi.exe"
+
+#! Full path to application in reduction
+reduction_application="./reduction_pi.exe"
+
+#! Run options for the application
+options=""
+
+###############################################################
+### You should not have to change anything below this line ####
+###############################################################
+
+#! change the working directory (default is home directory)
+
+cd $PBS_O_WORKDIR
+
+echo Running on host `hostname`
+echo Time is `date`
+echo Directory is `pwd`
+echo PBS job ID is $PBS_JOBID
+echo This jobs runs on the following machines:
+echo `cat $PBS_NODEFILE | uniq`
+ 
+numnodes=`wc $PBS_NODEFILE | awk '{ print $1 }'`
+
+#! Run the executable
+echo 'Serial'
+time $application $options
+
+echo 'Parallel with arrays'
+time $parallel_array_application $options
+
+echo 'Parallel with private variable'
+time $parallel_private_application $options
+
+echo 'Parallel with reduction'
+time $reduction_application $options

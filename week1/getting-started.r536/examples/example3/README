@@ -1,0 +1,53 @@
+
+Optimising serial code - dartboard_pi
+=====================================
+
+Compiler Flags
+==============
+
+Investigate the effects of different compiler flags upon the runtime
+for this program.  You can edit the CFLAGS lines in the Makefile
+to invoke various flags.
+
+You can see which flags are implied by the 'super' flag '-O3' by typing:
+
+> gcc -c -Q -O3 --help=optimizers | less
+
+use:
+
+> man gcc
+
+to learn more about the available flags and what they do.
+
+
+Profiling
+=========
+
+The next step is to profile the code, to see where it is spending it's time.
+
+Let's do this using vlagrind:
+
+> module add tools/valgrind-3.7.0
+> valgrind --tool=callgrind ./dartboard_pi.exe
+> callgrind_annotate callgrind.out.<pid>
+
+where you should replace <pid> appropriately for the file created when you
+ran valgrind.
+
+You'll see that the majority of the run time is spent calling the c library
+random number generator--rand().  Perhaps we can speed up the program by
+replacing these calls to a faster random number generator?
+
+
+Using the Mersenne Twister Algorithm
+====================================
+
+Uncomment the line below in the Makefile: 
+
+CFLAGS+=-DTWISTER
+
+and rebuild:
+
+> make clean; make
+
+Now, if you re-run the code, you should see different timings..

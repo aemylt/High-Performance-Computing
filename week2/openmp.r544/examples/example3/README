@@ -1,0 +1,17 @@
+
+This example directory and the next focus on work-sharing loops--the mainstay of OpenMP programming.
+
+simple
+======
+
+This program envokes the default work sharing algorithm.
+The output from the program shows how the loop iterattions are
+distributed between the cores.  On my laptop, I get two large
+contiguous sets of iterations executed by the two cores.
+
+schedule
+========
+
+In this program, we change the work-sharing pattern an explicitly
+ask that the work be distributed in chunks of ten loop iterations.
+ 

@@ -1,0 +1,9 @@
+
+We begin our OpenMP examples with, of course, the quintessential, "hello, world" program.
+
+OpenMP is available to C, C++ and Fortran programmers.  Accordingly, I've include C and
+Fortran90 versions in this directory.  These can be contrasted with a similar program
+written using POSIX threads directly.
+
+Type 'make' to create the executables.  I have also included a submission script for use
+on the cluster.

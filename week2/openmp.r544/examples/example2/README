@@ -1,0 +1,43 @@
+
+In this directory, we encounter several programs to estimate the value of pi.
+We will see an evolution from serial code to OpenMP parallel code, highlighting
+the common pitfalls of 'cache-thrashing' and 'false sharing' along the way.
+
+serial_pi
+=========
+
+- Try varying the value of num_steps and see the effect upon run-time and the
+  magnitude in the error in estimating pi.
+- The 'time' command is a useful tool for rough-and-ready timings, e.g.:
+> time ./serial_pi.exe
+
+parallel_shared_pi
+==================
+
+Here we see what happens if we share an accumulator over multiple threads.
+> time ./parallel_shared_pi.exe
+reveals the full horror of the cache-thrashing.
+
+parallel_array_pi
+=================
+
+This program is an attempt to correct the cache-thrashing but falls foul of
+the pitfall of 'false-sharing', as although the different threads use diffent
+cells of the array as accumulators, the whole array is small and can end up
+in cache and so coherency must be maintained.  On my two-core laptop, this
+program is still slower than the serial code.
+
+parallel_private_pi
+===================
+
+In this program we have finally corrected our mistakes and have declared
+an accumulator that is private to each thread.  We are rewarded by a corresponding
+reduction in the overall runtime.  A speed-up of just shy of 2 on my Centrino duo
+laptop.
+
+reduction_pi
+============
+
+Last but not least is a version which uses a 'reduction'.  No speed-up gains on
+2 cores, this approach is the most elegant and the reduction construct is one
+which scales well as the core count increases.

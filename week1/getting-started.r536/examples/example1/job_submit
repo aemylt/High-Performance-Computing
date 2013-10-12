@@ -1,0 +1,49 @@
+#!/bin/bash 
+#!
+#! Sample PBS file
+#!
+#! Name of job
+
+#PBS -N SERIAL
+#PBS -o OUT
+
+#! In this section we request the resources that we require
+#! i.e. the number of processors and the wall-clock time that
+#! we'll need them for to run the job.
+#! Processors:
+#! -l nodes=N:ppn=M
+#! here we request N nodes, each equiped with (at least) M processors
+#! e.g.:
+#! -l nodes=1:ppn=1 requests a single processor
+#! -l nodes=1:ppn=4 requests a whole node, containing 4 processors 
+#! -l nodes=2:ppn=4 requests a 2 nodes, containing 4 processors
+#! **NB** if you request, e.g., nodes=1:ppn=32 and a node in the cluster
+#! does not contain at least 32 processor cores, your job will _never_ run.
+#! Wall-clock time, e.g.:
+#! -l walltime=02:00:00 indicates 02 hours
+#! -l walltime=00:05:00 indicates 05 minutes
+
+#PBS -l nodes=1:ppn=1,walltime=00:05:00
+
+#! submit to the 'veryshort' queue
+#PBS -q veryshort
+
+#! Mail to user if job aborts
+#PBS -m a
+
+#! application name
+application="./serial.sh"
+
+#! Run options for the application
+options=""
+
+###############################################################
+### You should not have to change anything below this line ####
+###############################################################
+
+#! change the working directory (default is home directory)
+
+cd $PBS_O_WORKDIR
+
+#! Run the simple serial job 
+$application $options
