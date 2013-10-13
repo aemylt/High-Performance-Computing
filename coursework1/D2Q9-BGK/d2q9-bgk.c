@@ -185,8 +185,7 @@ int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obst
 {
   accelerate_flow(params,cells,obstacles);
   propagate(params,cells,tmp_cells);
-  rebound(params,cells,tmp_cells,obstacles);
-  collision(params,cells,tmp_cells,obstacles);
+  rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
 
@@ -255,33 +254,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells)
   return EXIT_SUCCESS;
 }
 
-int rebound(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
-{
-  int ii,jj;  /* generic counters */
-
-  /* loop over the cells in the grid */
-  for(ii=0;ii<params.ny;ii++) {
-    for(jj=0;jj<params.nx;jj++) {
-      /* if the cell contains an obstacle */
-      if(obstacles[ii*params.nx + jj]) {
-	      /* called after propagate, so taking values from scratch space
-	      ** mirroring, and writing into main grid */
-	      cells[ii*params.nx + jj].speeds[1] = tmp_cells[ii*params.nx + jj].speeds[3];
-	      cells[ii*params.nx + jj].speeds[2] = tmp_cells[ii*params.nx + jj].speeds[4];
-	      cells[ii*params.nx + jj].speeds[3] = tmp_cells[ii*params.nx + jj].speeds[1];
-	      cells[ii*params.nx + jj].speeds[4] = tmp_cells[ii*params.nx + jj].speeds[2];
-	      cells[ii*params.nx + jj].speeds[5] = tmp_cells[ii*params.nx + jj].speeds[7];
-	      cells[ii*params.nx + jj].speeds[6] = tmp_cells[ii*params.nx + jj].speeds[8];
-	      cells[ii*params.nx + jj].speeds[7] = tmp_cells[ii*params.nx + jj].speeds[5];
-	      cells[ii*params.nx + jj].speeds[8] = tmp_cells[ii*params.nx + jj].speeds[6];
-      }
-    }
-  }
-
-  return EXIT_SUCCESS;
-}
-
-int collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
+int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
   int ii,jj,kk;                 /* generic counters */
   const double c_sq = 1.0/3.0;  /* square of speed of sound */
@@ -300,8 +273,19 @@ int collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obs
   ** are in the scratch-space grid */
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
-      /* don't consider occupied cells */
-      if(!obstacles[ii*params.nx + jj]) {
+      /* if the cell contains an obstacle */
+      if(obstacles[ii*params.nx + jj]) {
+	      /* called after propagate, so taking values from scratch space
+	      ** mirroring, and writing into main grid */
+	      cells[ii*params.nx + jj].speeds[1] = tmp_cells[ii*params.nx + jj].speeds[3];
+	      cells[ii*params.nx + jj].speeds[2] = tmp_cells[ii*params.nx + jj].speeds[4];
+	      cells[ii*params.nx + jj].speeds[3] = tmp_cells[ii*params.nx + jj].speeds[1];
+	      cells[ii*params.nx + jj].speeds[4] = tmp_cells[ii*params.nx + jj].speeds[2];
+	      cells[ii*params.nx + jj].speeds[5] = tmp_cells[ii*params.nx + jj].speeds[7];
+	      cells[ii*params.nx + jj].speeds[6] = tmp_cells[ii*params.nx + jj].speeds[8];
+	      cells[ii*params.nx + jj].speeds[7] = tmp_cells[ii*params.nx + jj].speeds[5];
+	      cells[ii*params.nx + jj].speeds[8] = tmp_cells[ii*params.nx + jj].speeds[6];
+      } else {
 	      /* compute local density total */
 	      local_density = 0.0;
 	      for(kk=0;kk<NSPEEDS;kk++) {
