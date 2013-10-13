@@ -94,8 +94,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
 int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells);
-int rebound(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
+int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int write_values(const t_param params, t_speed* cells, int* obstacles, double* av_vels);
 
 /* finalise, including freeing up allocated memory */
