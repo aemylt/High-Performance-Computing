@@ -3,6 +3,7 @@
 EXE1=d2q9-bgk.exe
 EXES=$(EXE1)
 
+TAU=tau_cc.sh
 CC=gcc
 CFLAGS=-fopenmp -O3 -lm -Wall
 
@@ -16,3 +17,7 @@ $(EXES): %.exe : %.c
 clean:
 	\rm -f $(EXES)
 
+profile: $(EXES)
+
+$(EXES): %.exe : %.c
+	$(TAU) $(CFLAGS) $^ -o $@
