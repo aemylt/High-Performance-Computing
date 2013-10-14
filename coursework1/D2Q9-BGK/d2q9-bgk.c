@@ -270,6 +270,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
   ** NB the collision step is called after
   ** the propagate step and so values of interest
   ** are in the scratch-space grid */
+#pragma omp parallel for shared(cells) firstprivate(tmp_cells, obstacles) private(jj, kk, u_x, u_y, u, d_equ, u_sq, local_density)
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* if the cell contains an obstacle */
