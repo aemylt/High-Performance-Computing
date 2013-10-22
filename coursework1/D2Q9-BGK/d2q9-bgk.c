@@ -522,12 +522,13 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles)
   int    ii,jj,kk;       /* generic counters */
   int    tot_cells = 0;  /* no. of cells used in calculation */
   float local_density;  /* total density in cell */
-  float tot_u_x;        /* accumulated x-components of velocity */
+  float tot_u_x, tot_u_x_tmp;        /* accumulated x-components of velocity */
 
   /* initialise */
   tot_u_x = 0.0;
 
   /* loop over all non-blocked cells */
+#pragma omp parallel for shared(tot_u_x, tot_cells) firstprivate(cells, obstacles) private(jj, kk, local_density, tot_u_x_tmp)
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
@@ -538,7 +539,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles)
 	        local_density += cells[ii*params.nx + jj].speeds[kk];
 	      }
 	      /* x-component of velocity */
-	      tot_u_x += (cells[ii*params.nx + jj].speeds[1] + 
+	      tot_u_x_tmp = (cells[ii*params.nx + jj].speeds[1] + 
 		          cells[ii*params.nx + jj].speeds[5] + 
 		          cells[ii*params.nx + jj].speeds[8]
 		          - (cells[ii*params.nx + jj].speeds[3] + 
@@ -546,6 +547,9 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles)
 		             cells[ii*params.nx + jj].speeds[7])) / 
 	        local_density;
 	      /* increase counter of inspected cells */
+#pragma omp critical
+	      tot_u_x += tot_u_x_tmp;
+#pragma omp critical
 	      ++tot_cells;
       }
     }
