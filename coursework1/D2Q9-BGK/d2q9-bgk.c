@@ -199,6 +199,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
 
   /* modify the first column of the grid */
   jj=0;
+#pragma omp parallel for shared(cells) firstprivate(w1, w2, obstacles, jj)
   for(ii=0;ii<params.ny;ii++) {
     /* if the cell is not occupied and
     ** we don't send a density negative */
