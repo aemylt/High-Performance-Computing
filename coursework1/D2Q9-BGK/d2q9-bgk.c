@@ -92,8 +92,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
 ** accelerate_flow(), propagate(), rebound() & collision()
 */
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells);
+int accelerate_flow_and_propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels);
 
@@ -182,53 +181,39 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
-  accelerate_flow(params,cells,obstacles);
-  propagate(params,cells,tmp_cells);
+  accelerate_flow_and_propagate(params,cells,tmp_cells,obstacles);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
 
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
+int accelerate_flow_and_propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
-  int ii,jj;     /* generic counters */
+  int ii,jj;            /* generic counters */
+  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
   float w1,w2;  /* weighting factors */
   
   /* compute weighting factors */
   w1 = params.density * params.accel / 9.0;
   w2 = params.density * params.accel / 36.0;
 
-  /* modify the first column of the grid */
-  jj=0;
-#pragma omp parallel for shared(cells) firstprivate(w1, w2, obstacles, jj)
+  /* loop over _all_ cells */
+#pragma omp parallel for shared(tmp_cells) private(jj, x_e, x_w, y_n, y_s) firstprivate(cells, w1, w2)
   for(ii=0;ii<params.ny;ii++) {
     /* if the cell is not occupied and
     ** we don't send a density negative */
-    if( !obstacles[ii*params.nx + jj] && 
-	    (cells[ii*params.nx + jj].speeds[3] - w1) > 0.0 &&
-	    (cells[ii*params.nx + jj].speeds[6] - w2) > 0.0 &&
-	    (cells[ii*params.nx + jj].speeds[7] - w2) > 0.0 ) {
+    if( !obstacles[ii*params.nx] && 
+	    (cells[ii*params.nx].speeds[3] - w1) > 0.0 &&
+	    (cells[ii*params.nx].speeds[6] - w2) > 0.0 &&
+	    (cells[ii*params.nx].speeds[7] - w2) > 0.0 ) {
       /* increase 'east-side' densities */
-      cells[ii*params.nx + jj].speeds[1] += w1;
-      cells[ii*params.nx + jj].speeds[5] += w2;
-      cells[ii*params.nx + jj].speeds[8] += w2;
+      cells[ii*params.nx].speeds[1] += w1;
+      cells[ii*params.nx].speeds[5] += w2;
+      cells[ii*params.nx].speeds[8] += w2;
       /* decrease 'west-side' densities */
-      cells[ii*params.nx + jj].speeds[3] -= w1;
-      cells[ii*params.nx + jj].speeds[6] -= w2;
-      cells[ii*params.nx + jj].speeds[7] -= w2;
+      cells[ii*params.nx].speeds[3] -= w1;
+      cells[ii*params.nx].speeds[6] -= w2;
+      cells[ii*params.nx].speeds[7] -= w2;
     }
-  }
-
-  return EXIT_SUCCESS;
-}
-
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells)
-{
-  int ii,jj;            /* generic counters */
-  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
-
-  /* loop over _all_ cells */
-#pragma omp parallel for shared(tmp_cells) private(jj, x_e, x_w, y_n, y_s) firstprivate(cells)
-  for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
