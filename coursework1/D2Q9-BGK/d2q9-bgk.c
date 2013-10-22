@@ -528,7 +528,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles)
   tot_u_x = 0.0;
 
   /* loop over all non-blocked cells */
-#pragma omp parallel for reduction(+:tot_u_x, tot_cells) shared(tot_u_x, tot_cells) firstprivate(cells, obstacles) private(jj, kk, local_density)
+#pragma omp parallel for reduction(+:tot_u_x, tot_cells) firstprivate(cells, obstacles) private(jj, kk, local_density)
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
