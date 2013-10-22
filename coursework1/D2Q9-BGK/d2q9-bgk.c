@@ -389,11 +389,11 @@ int initialise(const char* paramfile, const char* obstaclefile,
   if(retval != 1) die ("could not read param file: maxIters",__LINE__,__FILE__);
   retval = fscanf(fp,"%d\n",&(params->reynolds_dim));
   if(retval != 1) die ("could not read param file: reynolds_dim",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->density));
+  retval = fscanf(fp,"%f\n",&(params->density));
   if(retval != 1) die ("could not read param file: density",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->accel));
+  retval = fscanf(fp,"%f\n",&(params->accel));
   if(retval != 1) die ("could not read param file: accel",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->omega));
+  retval = fscanf(fp,"%f\n",&(params->omega));
   if(retval != 1) die ("could not read param file: omega",__LINE__,__FILE__);
 
   /* and close up the file */
