@@ -16,8 +16,3 @@ $(EXES): %.exe : %.c
 
 clean:
 	\rm -f $(EXES)
-
-profile: $(EXES)
-
-$(EXES): %.exe : %.c
-	$(TAU) $(CFLAGS) $^ -o $@
