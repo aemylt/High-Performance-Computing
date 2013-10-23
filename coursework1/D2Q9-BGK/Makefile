@@ -10,7 +10,7 @@ CFLAGS=-fopenmp -O3 -lm -Wall
 all: $(EXES)
 
 $(EXES): %.exe : %.c
-	$(CC) $(CFLAGS) $^ -o $@
+	$(TAU) $(CFLAGS) $^ -o $@
 
 .PHONY: all clean
 
