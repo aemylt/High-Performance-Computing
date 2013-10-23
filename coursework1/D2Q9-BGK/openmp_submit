@@ -23,7 +23,7 @@
 application="./d2q9-bgk.exe"
 
 #! Run options for the application
-options="input_300x200.params obstacles_300x200.dat"
+options="input_600x400.params obstacles_600x400.dat"
 
 ###############################################################
 ### You should not have to change anything below this line ####
@@ -47,3 +47,4 @@ export OMP_NUM_THREADS=$numnodes
 #! Run the executable
 $application $options
 
+./check_results results/av_vels_600x400.dat results/final_state_600x400.dat
