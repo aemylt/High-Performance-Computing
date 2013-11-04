@@ -27,9 +27,23 @@ int main(int argc, char* argv[])
 
   sprintf(message_sent, "Come-in Danny-Boy, this is process %d!", myrank);
 
-  right = (myrank + 1) % size;
-  left = myrank - 1;
-  if (left < 0) left += size;
+  if (myrank < size / 2) {
+    if (myrank % 2 == 0) {
+      left = myrank + 2;
+      right = myrank + 1;
+    } else {
+      left = myrank - 1;
+      right = myrank + 2;
+    }
+  } else {
+    if (myrank % 2 == 0) {
+      left = myrank + 1;
+      right = myrank - 2;
+    } else {
+      left = myrank - 2;
+      right = myrank - 1;
+    }
+  }
 
   /* 
   ** SPMD - conditionals based upon rank
