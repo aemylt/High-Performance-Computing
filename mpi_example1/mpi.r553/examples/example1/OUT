@@ -1,0 +1,22 @@
+Running on host node091
+Time is Mon Nov 4 15:35:11 GMT 2013
+Directory is /gpfs/cluster/cosc/dm1905/High-Performance-Computing/mpi_example1/mpi.r553/examples/example1
+PBS job ID is 664847.bluecrystal1.cm.cluster
+This jobs runs on the following machines:
+node091.cm.cluster node092.cm.cluster quad001.cm.cluster quad002.cm.cluster
+Hello, world; from host node091: process 0 of 16
+Hello, world; from host quad001: process 8 of 16
+Hello, world; from host node091: process 3 of 16
+Hello, world; from host quad001: process 11 of 16
+Hello, world; from host quad001: process 9 of 16
+Hello, world; from host quad002: process 15 of 16
+Hello, world; from host node092: process 4 of 16
+Hello, world; from host node092: process 7 of 16
+Hello, world; from host quad002: process 12 of 16
+Hello, world; from host node091: process 1 of 16
+Hello, world; from host node091: process 2 of 16
+Hello, world; from host node092: process 6 of 16
+Hello, world; from host node092: process 5 of 16
+Hello, world; from host quad001: process 10 of 16
+Hello, world; from host quad002: process 14 of 16
+Hello, world; from host quad002: process 13 of 16
