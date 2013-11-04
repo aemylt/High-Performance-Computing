@@ -1,14 +1,14 @@
-Running on host node003
-Time is Mon Nov 4 16:49:37 GMT 2013
+Running on host node004
+Time is Mon Nov 4 16:58:54 GMT 2013
 Directory is /gpfs/cluster/cosc/dm1905/High-Performance-Computing/mpi_example1/mpi.r553/examples/example2
-PBS job ID is 664934.bluecrystal1.cm.cluster
+PBS job ID is 664942.bluecrystal1.cm.cluster
 This jobs runs on the following machines:
-node003.cm.cluster
-process 0 recieved message: Come-in Danny-Boy, this is process 2!
-process 2 recieved message: Come-in Danny-Boy, this is process 3!
-process 2 recieved message: Come-in Danny-Boy, this is process 0!
+node004.cm.cluster
+process 3 recieved message: Come-in Danny-Boy, this is process 1!
 process 1 recieved message: Come-in Danny-Boy, this is process 0!
 process 1 recieved message: Come-in Danny-Boy, this is process 3!
+process 0 recieved message: Come-in Danny-Boy, this is process 2!
 process 0 recieved message: Come-in Danny-Boy, this is process 1!
-process 3 recieved message: Come-in Danny-Boy, this is process 1!
+process 2 recieved message: Come-in Danny-Boy, this is process 3!
+process 2 recieved message: Come-in Danny-Boy, this is process 0!
 process 3 recieved message: Come-in Danny-Boy, this is process 2!

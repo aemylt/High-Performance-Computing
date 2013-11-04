@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   sprintf(message_sent, "Come-in Danny-Boy, this is process %d!", myrank);
 
   if (myrank < size / 2) {
-    if (myrank % 2 == 0) {
+    if (myrank % (size / 2) == 0) {
       left = myrank + 2;
       right = myrank + 1;
     } else {
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
       right = myrank + 2;
     }
   } else {
-    if (myrank % 2 == 0) {
+    if (myrank % (size / 2) == 0) {
       left = myrank + 1;
       right = myrank - 2;
     } else {
