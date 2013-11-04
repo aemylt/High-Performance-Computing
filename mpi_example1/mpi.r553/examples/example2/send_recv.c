@@ -35,19 +35,10 @@ int main(int argc, char* argv[])
   ** SPMD - conditionals based upon rank
   ** will also become ubiquitous
   */
-  if (myrank % 2 == 0) {  /* this is _NOT_ the master process */
-    MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, left, sendtag, message_received, BUFSIZ, MPI_CHAR, left, recvtag, MPI_COMM_WORLD, &status);
-    printf("process %d recieved message: %s\n", myrank, message_received);
-    MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, right, sendtag, message_received, BUFSIZ, MPI_CHAR, right, recvtag, MPI_COMM_WORLD, &status);
-    printf("process %d recieved message: %s\n", myrank, message_received);
-
-  }
-  else {
-    MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, right, sendtag, message_received, BUFSIZ, MPI_CHAR, right, recvtag, MPI_COMM_WORLD, &status);
-    printf("process %d recieved message: %s\n", myrank, message_received);
-    MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, left, sendtag, message_received, BUFSIZ, MPI_CHAR, left, recvtag, MPI_COMM_WORLD, &status);
-    printf("process %d recieved message: %s\n", myrank, message_received);
-  }
+  MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, right, sendtag, message_received, BUFSIZ, MPI_CHAR, left, recvtag, MPI_COMM_WORLD, &status);
+  printf("process %d recieved message: %s\n", myrank, message_received);
+  MPI_Sendrecv(message_sent,strlen(message_sent)+1, MPI_CHAR, left, sendtag, message_received, BUFSIZ, MPI_CHAR, right, recvtag, MPI_COMM_WORLD, &status);
+  printf("process %d recieved message: %s\n", myrank, message_received);
 
   /* don't forget to tidy up when we're done */
   MPI_Finalize();
