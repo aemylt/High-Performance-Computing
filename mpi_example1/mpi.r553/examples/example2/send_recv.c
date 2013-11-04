@@ -26,21 +26,22 @@ int main(int argc, char* argv[])
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 
   sprintf(message_sent, "Come-in Danny-Boy, this is process %d!", myrank);
+  int half = size / 2;
 
-  if (myrank < size / 2) {
-    if (myrank % (size / 2) == 0) {
-      left = myrank + 2;
+  if (myrank < half) {
+    if (myrank % half == 0) {
+      left = myrank + half;
       right = myrank + 1;
     } else {
       left = myrank - 1;
-      right = myrank + 2;
+      right = (myrank == half - 1) ? myrank + half : myrank + 1;
     }
   } else {
-    if (myrank % (size / 2) == 0) {
+    if (myrank % half == 0) {
       left = myrank + 1;
-      right = myrank - 2;
+      right = myrank - half;
     } else {
-      left = myrank - 2;
+      left = (myrank == size - 1) ? myrank - half : myrank + 1;
       right = myrank - 1;
     }
   }
