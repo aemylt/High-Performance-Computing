@@ -1,0 +1,17 @@
+Welcome to the MPI programming examples!
+
+In this directory we start, again, with "hello, world."
+MPI libraries can be used with several languages.  Here
+we have programs written in C, C++, Fortran77 and Fortran90.
+
+**NB**  Loading multiple MPI related modules could cause
+unpredictable behaviour and runtime errors (as mpirun from
+one module can end up being called with executables created
+with compilers from another).
+
+For simplicity just load the:
+
+  base/infiniband-gcc
+and
+  tools/tau-2.21.1-mpi
+modules.

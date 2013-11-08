@@ -47,3 +47,4 @@ export OMP_NUM_THREADS=$numnodes
 #! Run the executable
 $application $options
 
+./check_results results/av_vels_300x200.dat results/final_state_300x200.dat

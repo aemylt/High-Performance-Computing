@@ -65,14 +65,14 @@ typedef struct {
   int    ny;            /* no. of cells in y-direction */
   int    maxIters;      /* no. of iterations */
   int    reynolds_dim;  /* dimension for Reynolds number */
-  double density;       /* density per link */
-  double accel;         /* density redistribution */
-  double omega;         /* relaxation parameter */
+  float density;       /* density per link */
+  float accel;         /* density redistribution */
+  float omega;         /* relaxation parameter */
 } t_param;
 
 /* struct to hold the 'speed' values */
 typedef struct {
-  double speeds[NSPEEDS];
+  float speeds[NSPEEDS];
 } t_speed;
 
 enum boolean { FALSE, TRUE };
@@ -84,7 +84,7 @@ enum boolean { FALSE, TRUE };
 /* load params, allocate memory, load obstacles & initialise fluid particle densities */
 int initialise(const char* paramfile, const char* obstaclefile,
 	       t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr, 
-	       int** obstacles_ptr, double** av_vels_ptr);
+	       int** obstacles_ptr, float** av_vels_ptr);
 
 /* 
 ** The main calculation methods.
@@ -92,24 +92,23 @@ int initialise(const char* paramfile, const char* obstaclefile,
 ** accelerate_flow(), propagate(), rebound() & collision()
 */
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells);
+int accelerate_flow_and_propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int write_values(const t_param params, t_speed* cells, int* obstacles, double* av_vels);
+int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels);
 
 /* finalise, including freeing up allocated memory */
 int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-	     int** obstacles_ptr, double** av_vels_ptr);
+	     int** obstacles_ptr, float** av_vels_ptr);
 
 /* Sum all the densities in the grid.
 ** The total should remain constant from one timestep to the next. */
-double total_density(const t_param params, t_speed* cells);
+float total_density(const t_param params, t_speed* cells);
 
 /* compute average velocity */
-double av_velocity(const t_param params, t_speed* cells, int* obstacles);
+float av_velocity(const t_param params, t_speed* cells, int* obstacles);
 
 /* calculate Reynolds number */
-double calc_reynolds(const t_param params, t_speed* cells, int* obstacles);
+float calc_reynolds(const t_param params, t_speed* cells, int* obstacles);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -127,7 +126,7 @@ int main(int argc, char* argv[])
   t_speed* cells     = NULL;  /* grid containing fluid densities */
   t_speed* tmp_cells = NULL;  /* scratch space */
   int*     obstacles = NULL;  /* grid indicating which cells are blocked */
-  double*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
+  float*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
   int      ii;                /* generic counter */
   struct timeval timstr;      /* structure to hold elapsed time */
   struct rusage ru;           /* structure to hold CPU time--system and user */
@@ -182,51 +181,39 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
-  accelerate_flow(params,cells,obstacles);
-  propagate(params,cells,tmp_cells);
+  accelerate_flow_and_propagate(params,cells,tmp_cells,obstacles);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
 
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
+int accelerate_flow_and_propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
-  int ii,jj;     /* generic counters */
-  double w1,w2;  /* weighting factors */
+  int ii,jj;            /* generic counters */
+  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
+  float w1,w2;  /* weighting factors */
   
   /* compute weighting factors */
   w1 = params.density * params.accel / 9.0;
   w2 = params.density * params.accel / 36.0;
 
-  /* modify the first column of the grid */
-  jj=0;
+  /* loop over _all_ cells */
+#pragma omp parallel for shared(tmp_cells) private(jj, x_e, x_w, y_n, y_s) firstprivate(cells, w1, w2)
   for(ii=0;ii<params.ny;ii++) {
     /* if the cell is not occupied and
     ** we don't send a density negative */
-    if( !obstacles[ii*params.nx + jj] && 
-	    (cells[ii*params.nx + jj].speeds[3] - w1) > 0.0 &&
-	    (cells[ii*params.nx + jj].speeds[6] - w2) > 0.0 &&
-	    (cells[ii*params.nx + jj].speeds[7] - w2) > 0.0 ) {
+    if( !obstacles[ii*params.nx] && 
+	    (cells[ii*params.nx].speeds[3] - w1) > 0.0 &&
+	    (cells[ii*params.nx].speeds[6] - w2) > 0.0 &&
+	    (cells[ii*params.nx].speeds[7] - w2) > 0.0 ) {
       /* increase 'east-side' densities */
-      cells[ii*params.nx + jj].speeds[1] += w1;
-      cells[ii*params.nx + jj].speeds[5] += w2;
-      cells[ii*params.nx + jj].speeds[8] += w2;
+      cells[ii*params.nx].speeds[1] += w1;
+      cells[ii*params.nx].speeds[5] += w2;
+      cells[ii*params.nx].speeds[8] += w2;
       /* decrease 'west-side' densities */
-      cells[ii*params.nx + jj].speeds[3] -= w1;
-      cells[ii*params.nx + jj].speeds[6] -= w2;
-      cells[ii*params.nx + jj].speeds[7] -= w2;
+      cells[ii*params.nx].speeds[3] -= w1;
+      cells[ii*params.nx].speeds[6] -= w2;
+      cells[ii*params.nx].speeds[7] -= w2;
     }
-  }
-
-  return EXIT_SUCCESS;
-}
-
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells)
-{
-  int ii,jj;            /* generic counters */
-  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
-
-  /* loop over _all_ cells */
-  for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
@@ -256,15 +243,15 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells)
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
   int ii,jj,kk;                 /* generic counters */
-  const double c_sq = 1.0/3.0;  /* square of speed of sound */
-  const double w0 = 4.0/9.0;    /* weighting factor */
-  const double w1 = 1.0/9.0;    /* weighting factor */
-  const double w2 = 1.0/36.0;   /* weighting factor */
-  double u_x,u_y;               /* av. velocities in x and y directions */
-  double u[NSPEEDS];            /* directional velocities */
-  double d_equ[NSPEEDS];        /* equilibrium densities */
-  double u_sq;                  /* squared velocity */
-  double local_density;         /* sum of densities in a particular cell */
+  const float c_sq = 1.0/3.0;  /* square of speed of sound */
+  const float w0 = 4.0/9.0;    /* weighting factor */
+  const float w1 = 1.0/9.0;    /* weighting factor */
+  const float w2 = 1.0/36.0;   /* weighting factor */
+  float u_x,u_y;               /* av. velocities in x and y directions */
+  float u[NSPEEDS];            /* directional velocities */
+  float d_equ[NSPEEDS];        /* equilibrium densities */
+  float u_sq;                  /* squared velocity */
+  float local_density;         /* sum of densities in a particular cell */
 
   /* loop over the cells in the grid
   ** NB the collision step is called after
@@ -320,33 +307,33 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
 	      u[8] =   u_x - u_y;  /* south-east */
 	      /* equilibrium densities */
 	      /* zero velocity density: weight w0 */
-	      d_equ[0] = w0 * local_density * (1.0 - u_sq / (2.0 * c_sq));
+	      d_equ[0] = w0 * local_density * (1.0 - u_sq * (1.0 / (2.0 * c_sq)));
 	      /* axis speeds: weight w1 */
-	      d_equ[1] = w1 * local_density * (1.0 + u[1] / c_sq
-					       + (u[1] * u[1]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[2] = w1 * local_density * (1.0 + u[2] / c_sq
-					       + (u[2] * u[2]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[3] = w1 * local_density * (1.0 + u[3] / c_sq
-					       + (u[3] * u[3]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[4] = w1 * local_density * (1.0 + u[4] / c_sq
-					       + (u[4] * u[4]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
+	      d_equ[1] = w1 * local_density * (1.0 + u[1] * (1.0 / c_sq)
+					       + (u[1] * u[1]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[2] = w1 * local_density * (1.0 + u[2] * (1.0 / c_sq)
+					       + (u[2] * u[2]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[3] = w1 * local_density * (1.0 + u[3] * (1.0 / c_sq)
+					       + (u[3] * u[3]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[4] = w1 * local_density * (1.0 + u[4] * (1.0 / c_sq)
+					       + (u[4] * u[4]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
 	      /* diagonal speeds: weight w2 */
-	      d_equ[5] = w2 * local_density * (1.0 + u[5] / c_sq
-					       + (u[5] * u[5]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[6] = w2 * local_density * (1.0 + u[6] / c_sq
-					       + (u[6] * u[6]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[7] = w2 * local_density * (1.0 + u[7] / c_sq
-					       + (u[7] * u[7]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
-	      d_equ[8] = w2 * local_density * (1.0 + u[8] / c_sq
-					       + (u[8] * u[8]) / (2.0 * c_sq * c_sq)
-					       - u_sq / (2.0 * c_sq));
+	      d_equ[5] = w2 * local_density * (1.0 + u[5] * (1.0 / c_sq)
+					       + (u[5] * u[5]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[6] = w2 * local_density * (1.0 + u[6] * (1.0 / c_sq)
+					       + (u[6] * u[6]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[7] = w2 * local_density * (1.0 + u[7] * (1.0 / c_sq)
+					       + (u[7] * u[7]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
+	      d_equ[8] = w2 * local_density * (1.0 + u[8] * (1.0 / c_sq)
+					       + (u[8] * u[8]) * (1.0 / (2.0 * c_sq * c_sq))
+					       - u_sq * (1.0 / (2.0 * c_sq)));
 	      /* relaxation step */
 	      for(kk=0;kk<NSPEEDS;kk++) {
 	        cells[ii*params.nx + jj].speeds[kk] = (tmp_cells[ii*params.nx + jj].speeds[kk]
@@ -362,7 +349,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
 
 int initialise(const char* paramfile, const char* obstaclefile,
 	       t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr, 
-	       int** obstacles_ptr, double** av_vels_ptr)
+	       int** obstacles_ptr, float** av_vels_ptr)
 {
   char   message[1024];  /* message buffer */
   FILE   *fp;            /* file pointer */
@@ -370,7 +357,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    xx,yy;          /* generic array indices */
   int    blocked;        /* indicates whether a cell is blocked by an obstacle */ 
   int    retval;         /* to hold return value for checking */
-  double w0,w1,w2;       /* weighting factors */
+  float w0,w1,w2;       /* weighting factors */
 
   /* open the parameter file */
   fp = fopen(paramfile,"r");
@@ -388,11 +375,11 @@ int initialise(const char* paramfile, const char* obstaclefile,
   if(retval != 1) die ("could not read param file: maxIters",__LINE__,__FILE__);
   retval = fscanf(fp,"%d\n",&(params->reynolds_dim));
   if(retval != 1) die ("could not read param file: reynolds_dim",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->density));
+  retval = fscanf(fp,"%f\n",&(params->density));
   if(retval != 1) die ("could not read param file: density",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->accel));
+  retval = fscanf(fp,"%f\n",&(params->accel));
   if(retval != 1) die ("could not read param file: accel",__LINE__,__FILE__);
-  retval = fscanf(fp,"%lf\n",&(params->omega));
+  retval = fscanf(fp,"%f\n",&(params->omega));
   if(retval != 1) die ("could not read param file: omega",__LINE__,__FILE__);
 
   /* and close up the file */
@@ -490,13 +477,13 @@ int initialise(const char* paramfile, const char* obstaclefile,
   ** allocate space to hold a record of the avarage velocities computed 
   ** at each timestep
   */
-  *av_vels_ptr = (double*)malloc(sizeof(double)*params->maxIters);
+  *av_vels_ptr = (float*)malloc(sizeof(float)*params->maxIters);
 
   return EXIT_SUCCESS;
 }
 
 int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-	     int** obstacles_ptr, double** av_vels_ptr)
+	     int** obstacles_ptr, float** av_vels_ptr)
 {
   /* 
   ** free up allocated memory
@@ -516,17 +503,18 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
   return EXIT_SUCCESS;
 }
 
-double av_velocity(const t_param params, t_speed* cells, int* obstacles)
+float av_velocity(const t_param params, t_speed* cells, int* obstacles)
 {
   int    ii,jj,kk;       /* generic counters */
   int    tot_cells = 0;  /* no. of cells used in calculation */
-  double local_density;  /* total density in cell */
-  double tot_u_x;        /* accumulated x-components of velocity */
+  float local_density;  /* total density in cell */
+  float tot_u_x;        /* accumulated x-components of velocity */
 
   /* initialise */
   tot_u_x = 0.0;
 
   /* loop over all non-blocked cells */
+#pragma omp parallel for reduction(+:tot_u_x, tot_cells) firstprivate(cells, obstacles) private(jj, kk, local_density)
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
@@ -550,20 +538,20 @@ double av_velocity(const t_param params, t_speed* cells, int* obstacles)
     }
   }
 
-  return tot_u_x / (double)tot_cells;
+  return tot_u_x / (float)tot_cells;
 }
 
-double calc_reynolds(const t_param params, t_speed* cells, int* obstacles)
+float calc_reynolds(const t_param params, t_speed* cells, int* obstacles)
 {
-  const double viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
+  const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
   return av_velocity(params,cells,obstacles) * params.reynolds_dim / viscosity;
 }
 
-double total_density(const t_param params, t_speed* cells)
+float total_density(const t_param params, t_speed* cells)
 {
   int ii,jj,kk;        /* generic counters */
-  double total = 0.0;  /* accumulator */
+  float total = 0.0;  /* accumulator */
 
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
@@ -576,15 +564,15 @@ double total_density(const t_param params, t_speed* cells)
   return total;
 }
 
-int write_values(const t_param params, t_speed* cells, int* obstacles, double* av_vels)
+int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels)
 {
   FILE* fp;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
-  const double c_sq = 1.0/3.0;  /* sq. of speed of sound */
-  double local_density;         /* per grid cell sum of densities */
-  double pressure;              /* fluid pressure in grid cell */
-  double u_x;                   /* x-component of velocity in grid cell */
-  double u_y;                   /* y-component of velocity in grid cell */
+  const float c_sq = 1.0/3.0;  /* sq. of speed of sound */
+  float local_density;         /* per grid cell sum of densities */
+  float pressure;              /* fluid pressure in grid cell */
+  float u_x;                   /* x-component of velocity in grid cell */
+  float u_y;                   /* y-component of velocity in grid cell */
 
   fp = fopen(FINALSTATEFILE,"w");
   if (fp == NULL) {
