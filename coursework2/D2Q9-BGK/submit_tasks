@@ -1,0 +1,11 @@
+#!/bin/bash
+
+qsub mpi_submit -o OUT_1
+
+qsub mpi_submit -o OUT_2
+
+qsub mpi_submit -o OUT_3
+
+qsub mpi_submit -o OUT_4
+
+qsub mpi_submit -o OUT_5
