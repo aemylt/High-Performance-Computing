@@ -10,7 +10,7 @@
 # If the verification fails, the differences will be output to the
 # following files for inspection:
 # av_vels.diff     (differences in the average velocities)
-# final_state.diff (differences in the pressure values of the final state)
+# final_state.diff (differences in the u_x/pressure values of the final state)
 #
 # By default, this script will check for any relative errors greater
 # than 1%. To change the tolerance, you may specify a third
@@ -19,10 +19,19 @@
 # will check for errors greater than 5%.
 #
 
+function printUsage()
+{
+  echo
+  echo "Usage: ./check_results REF_AV_VELS REF_FINAL_STATE [TOL]"
+  echo "Compares ./av_vels.dat to REF_AV_VELS," \
+       "and ./final_state.dat to REF_FINAL_STATE"
+  echo
+}
+
 # Check correct number of arguments given
 if [ $# -lt 2 -o $# -gt 3 ]
 then
-  echo "Usage: ./check_results REF_AV_VELS REF_FINAL_STATE [TOL]"
+  printUsage
   exit 2
 fi
 
@@ -38,6 +47,7 @@ function checkExists()
   if [ ! -r "$1" ]
   then
     echo "Unable to open $1."
+    printUsage
     exit 2
   fi
 }
@@ -50,7 +60,30 @@ checkExists $REF_STATE
 if [ $AV_VELS == $REF_AV_VELS -o $STATE == $REF_STATE ]
 then
     echo "Reference file names must be different to output files!"
+    printUsage
     exit 2
+fi
+
+# Ensure that output files have correct number of rows and columns
+AV_ROWS=$(awk 'END{print NR}' $AV_VELS)
+AV_COLS=$(awk 'END{print NF}' $AV_VELS)
+REF_AV_ROWS=$(awk 'END{print NR}' $REF_AV_VELS)
+REF_AV_COLS=$(awk 'END{print NF}' $REF_AV_VELS)
+STATE_ROWS=$(awk 'END{print NR}' $STATE)
+STATE_COLS=$(awk 'END{print NF}' $STATE)
+REF_STATE_ROWS=$(awk 'END{print NR}' $REF_STATE)
+REF_STATE_COLS=$(awk 'END{print NF}' $REF_STATE)
+if [ $AV_ROWS != $REF_AV_ROWS -o $AV_COLS != $REF_AV_COLS ]
+then
+  echo "Number of rows/columns in output and reference av_vels don't match."
+  printUsage
+  exit 2
+fi
+if [ $STATE_ROWS != $REF_STATE_ROWS -o $STATE_COLS != $REF_STATE_COLS ]
+then
+  echo "Number of rows/columns in output and reference final_state don't match."
+  printUsage
+  exit 2
 fi
 
 # Verify TOL is numeric and >= 0
@@ -76,22 +109,38 @@ function err(actual, ref)
 # Compare velocities
 AV_VELS_DIFF=av_vels.diff
 awk "$AWK_UTIL"'{
+  IGNORECASE = 1
+
   diff = err($2, $4);
-  if (abs(diff) > '$TOL')
+  if (abs(diff) > '$TOL' || $2 == "nan")
   {
-    printf "Timestep %-6s: %.3e vs %.3e (%+.2f%%)\n", (NR-1), $2, $4, diff
+    printf "Timestep %-6s: %.3e vs %.3e (%+.2f%%)\n",
+           (NR-1), $2, $4, diff
   }
-}' <(paste $REF_AV_VELS $AV_VELS) >$AV_VELS_DIFF
+}' <(paste $AV_VELS $REF_AV_VELS) >$AV_VELS_DIFF
 
 # Compare final state
 STATE_DIFF=final_state.diff
 awk "$AWK_UTIL"'{
-  diff = err($5, $11);
-  if (abs(diff) > '$TOL')
+  IGNORECASE = 1
+
+  if (abs($9) > 0.001)
   {
-    printf "x=%-4s y=%-4s: %.3e vs %.3e (%+.2f%%)\n", $1, $2, $5, $11, diff
+    diff = err($3, $9);
+    if ( abs(diff) > ('$TOL'*5) || $3 == "nan")
+    {
+      printf "y=%-4s x=%-4s (u_x)     : %+.3e vs %+.3e (%+.2f%%)\n",
+             $1, $2, $3, $9, diff
+    }
   }
-}' <(paste $REF_STATE $STATE) >$STATE_DIFF
+
+  diff = err($5, $11);
+  if (abs(diff) > '$TOL' || $5 == "nan")
+  {
+    printf "y=%-4s x=%-4s (pressure): +%.3e vs +%.3e (%+.2f%%)\n",
+           $1, $2, $5, $11, diff
+  }
+}' <(paste $STATE $REF_STATE) >$STATE_DIFF
 
 # Exit with code 0 if files match, 1 otherwise
 if [ -s $AV_VELS_DIFF -o -s $STATE_DIFF ]
