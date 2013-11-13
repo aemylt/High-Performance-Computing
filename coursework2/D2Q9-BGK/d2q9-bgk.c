@@ -54,7 +54,9 @@
 #include<time.h>
 #include<sys/time.h>
 #include<sys/resource.h>
+#include "mpi.h"
 
+#define MASTER 0
 #define NSPEEDS         9
 #define FINALSTATEFILE  "final_state.dat"
 #define AVVELSFILE      "av_vels.dat"
@@ -84,16 +86,16 @@ enum boolean { FALSE, TRUE };
 /* load params, allocate memory, load obstacles & initialise fluid particle densities */
 int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-               int** obstacles_ptr, float** av_vels_ptr);
+               int** obstacles_ptr, float** av_vels_ptr, int size, int rank);
 
 /* 
 ** The main calculation methods.
 ** timestep calls, in order, the functions:
 ** accelerate_flow(), propagate(), rebound() & collision()
 */
-int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
+int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank);
 int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells);
+int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels);
 
@@ -103,13 +105,13 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
 
 /* Sum all the densities in the grid.
 ** The total should remain constant from one timestep to the next. */
-float total_density(const t_param params, t_speed* cells);
+float total_density(const t_param params, t_speed* cells, int size, int rank);
 
 /* compute average velocity */
-float av_velocity(const t_param params, t_speed* cells, int* obstacles);
+float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size, int rank);
 
 /* calculate Reynolds number */
-float calc_reynolds(const t_param params, t_speed* cells, int* obstacles);
+float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -134,6 +136,7 @@ int main(int argc, char* argv[])
   double tic,toc;             /* floating point numbers to calculate elapsed wallclock time */
   double usrtim;              /* floating point number to record elapsed user CPU time */
   double systim;              /* floating point number to record elapsed system CPU time */
+  int size, rank;
 
   /* parse the command line */
   if(argc != 3) {
@@ -143,47 +146,56 @@ int main(int argc, char* argv[])
     paramfile = argv[1];
     obstaclefile = argv[2];
   }
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   /* initialise our data structures and load values from file */
-  initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels);
+  initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank);
 
-  /* iterate for maxIters timesteps */
-  gettimeofday(&timstr,NULL);
-  tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+  if (rank == MASTER) {
+      /* iterate for maxIters timesteps */
+      gettimeofday(&timstr,NULL);
+      tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+  }
 
   for (ii=0;ii<params.maxIters;ii++) {
-    timestep(params,cells,tmp_cells,obstacles);
-    av_vels[ii] = av_velocity(params,cells,obstacles);
+    timestep(params,cells,tmp_cells,obstacles, size, rank);
+    av_vels[ii] = av_velocity(params,cells,obstacles, size, rank);
 #ifdef DEBUG
     printf("==timestep: %d==\n",ii);
     printf("av velocity: %.12E\n", av_vels[ii]);
-    printf("tot density: %.12E\n",total_density(params,cells));
+    printf("tot density: %.12E\n",total_density(params,cells, size, rank));
 #endif
   }
-  gettimeofday(&timstr,NULL);
-  toc=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-  getrusage(RUSAGE_SELF, &ru);
-  timstr=ru.ru_utime;        
-  usrtim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-  timstr=ru.ru_stime;        
-  systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-
-  /* write final values and free memory */
-  printf("==done==\n");
-  printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cells,obstacles));
-  printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
-  printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
-  printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
-  write_values(params,cells,obstacles,av_vels);
+  if (rank == MASTER) {
+      gettimeofday(&timstr,NULL);
+      toc=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      getrusage(RUSAGE_SELF, &ru);
+      timstr=ru.ru_utime;        
+      usrtim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      timstr=ru.ru_stime;        
+      systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+    
+      /* write final values and free memory */
+      printf("==done==\n");
+      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cells,obstacles, size, rank));
+      printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
+      printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
+      printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
+      write_values(params,cells,obstacles,av_vels);
+  }
   finalise(&params, &cells, &tmp_cells, &obstacles, &av_vels);
+  
+  MPI_Finalize();
   
   return EXIT_SUCCESS;
 }
 
-int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
+int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank)
 {
   accelerate_flow(params,cells,obstacles);
-  propagate(params,cells,tmp_cells);
+  propagate(params,cells,tmp_cells, size, rank);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
@@ -220,7 +232,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
   return EXIT_SUCCESS;
 }
 
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells)
+int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank)
 {
   int ii,jj;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
@@ -361,7 +373,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
 
 int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-               int** obstacles_ptr, float** av_vels_ptr)
+               int** obstacles_ptr, float** av_vels_ptr, int size, int rank)
 {
   char   message[1024];  /* message buffer */
   FILE   *fp;            /* file pointer */
@@ -515,7 +527,7 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
   return EXIT_SUCCESS;
 }
 
-float av_velocity(const t_param params, t_speed* cells, int* obstacles)
+float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size, int rank)
 {
   int    ii,jj,kk;       /* generic counters */
   int    tot_cells = 0;  /* no. of cells used in calculation */
@@ -552,14 +564,14 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles)
   return tot_u_x / (float)tot_cells;
 }
 
-float calc_reynolds(const t_param params, t_speed* cells, int* obstacles)
+float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank)
 {
   const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
-  return av_velocity(params,cells,obstacles) * params.reynolds_dim / viscosity;
+  return av_velocity(params,cells,obstacles, size, rank) * params.reynolds_dim / viscosity;
 }
 
-float total_density(const t_param params, t_speed* cells)
+float total_density(const t_param params, t_speed* cells, int size, int rank)
 {
   int ii,jj,kk;        /* generic counters */
   float total = 0.0;  /* accumulator */

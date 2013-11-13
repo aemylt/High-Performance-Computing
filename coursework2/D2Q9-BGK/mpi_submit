@@ -44,6 +44,6 @@ numnodes=`wc $PBS_NODEFILE | awk '{ print $1 }'`
 export OMP_NUM_THREADS=$numnodes
 
 #! Run the executable
-$application $options
+mpirun -np $numnodes -machinefile machine.file.$PBS_JOBID $application $options
 
 ./check_results results/av_vels_300x200.dat results/final_state_300x200.dat

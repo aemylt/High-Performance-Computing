@@ -3,7 +3,7 @@
 EXE1=d2q9-bgk.exe
 EXES=$(EXE1)
 
-CC=gcc
+CC=mpicc
 CFLAGS=-lm -Wall -O3
 
 all: $(EXES)
