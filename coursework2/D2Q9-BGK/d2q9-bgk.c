@@ -153,6 +153,10 @@ int main(int argc, char* argv[])
 
   /* initialise our data structures and load values from file */
   initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank);
+  
+  MPI_Finalize();
+  
+  return EXIT_SUCCESS;
 
   if (rank == MASTER) {
       /* iterate for maxIters timesteps */
@@ -475,6 +479,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
   }
   
   printf("%d %d %d %d %f %f %f %f", rank, params->nx, params->ny, params->maxIters, params->reynolds_dim, params->density, params->accel, params->omega);
+
+  return EXIT_SUCCESS;
 
   /* 
   ** Allocate memory.
