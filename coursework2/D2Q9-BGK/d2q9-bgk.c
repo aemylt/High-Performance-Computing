@@ -478,7 +478,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
       }
   }
   
-  printf("%d %d %d %d %d %f %f %f", rank, params->nx, params->ny, params->maxIters, params->reynolds_dim, params->density, params->accel, params->omega);
+  printf("%d %d %d %d %d %f %f %f\n", rank, params->nx, params->ny, params->maxIters, params->reynolds_dim, params->density, params->accel, params->omega);
 
   return EXIT_SUCCESS;
 
