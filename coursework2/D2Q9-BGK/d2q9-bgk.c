@@ -57,6 +57,7 @@
 #include "mpi.h"
 
 #define MASTER 0
+#define NUMPARAMS 7
 #define NSPEEDS         9
 #define FINALSTATEFILE  "final_state.dat"
 #define AVVELSFILE      "av_vels.dat"
@@ -383,31 +384,97 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
 
-  /* open the parameter file */
-  fp = fopen(paramfile,"r");
-  if (fp == NULL) {
-    sprintf(message,"could not open input parameter file: %s", paramfile);
-    die(message,__LINE__,__FILE__);
+  if (rank == MASTER) {
+      /* open the parameter file */
+      fp = fopen(paramfile,"r");
+      if (fp == NULL) {
+        sprintf(message,"could not open input parameter file: %s", paramfile);
+        die(message,__LINE__,__FILE__);
+      }
+    
+      /* read in the parameter values */
+      retval = fscanf(fp,"%d\n",&(params->nx));
+      if(retval != 1) die ("could not read param file: nx",__LINE__,__FILE__);
+      retval = fscanf(fp,"%d\n",&(params->ny));
+      if(retval != 1) die ("could not read param file: ny",__LINE__,__FILE__);
+      retval = fscanf(fp,"%d\n",&(params->maxIters));
+      if(retval != 1) die ("could not read param file: maxIters",__LINE__,__FILE__);
+      retval = fscanf(fp,"%d\n",&(params->reynolds_dim));
+      if(retval != 1) die ("could not read param file: reynolds_dim",__LINE__,__FILE__);
+      retval = fscanf(fp,"%f\n",&(params->density));
+      if(retval != 1) die ("could not read param file: density",__LINE__,__FILE__);
+      retval = fscanf(fp,"%f\n",&(params->accel));
+      if(retval != 1) die ("could not read param file: accel",__LINE__,__FILE__);
+      retval = fscanf(fp,"%f\n",&(params->omega));
+      if(retval != 1) die ("could not read param file: omega",__LINE__,__FILE__);
+    
+      /* and close up the file */
+      fclose(fp);
   }
-
-  /* read in the parameter values */
-  retval = fscanf(fp,"%d\n",&(params->nx));
-  if(retval != 1) die ("could not read param file: nx",__LINE__,__FILE__);
-  retval = fscanf(fp,"%d\n",&(params->ny));
-  if(retval != 1) die ("could not read param file: ny",__LINE__,__FILE__);
-  retval = fscanf(fp,"%d\n",&(params->maxIters));
-  if(retval != 1) die ("could not read param file: maxIters",__LINE__,__FILE__);
-  retval = fscanf(fp,"%d\n",&(params->reynolds_dim));
-  if(retval != 1) die ("could not read param file: reynolds_dim",__LINE__,__FILE__);
-  retval = fscanf(fp,"%f\n",&(params->density));
-  if(retval != 1) die ("could not read param file: density",__LINE__,__FILE__);
-  retval = fscanf(fp,"%f\n",&(params->accel));
-  if(retval != 1) die ("could not read param file: accel",__LINE__,__FILE__);
-  retval = fscanf(fp,"%f\n",&(params->omega));
-  if(retval != 1) die ("could not read param file: omega",__LINE__,__FILE__);
-
-  /* and close up the file */
-  fclose(fp);
+  
+  if (size > 1) {
+      MPI_Aint base_addr, addr;
+      MPI_Aint displacements[NUMPARAMS];
+      MPI_Datatype types[NUMPARAMS];
+      MPI_Datatype params_type;
+      int block_lengths[NUMPARAMS];
+      t_param send_params;
+      if (rank == MASTER) {
+          send_params.nx = params->nx;
+          send_params.ny = params->ny / (size);
+          send_params.maxIters = params->maxIters;
+          send_params.reynolds_dim = params->reynolds_dim;
+          send_params.density = params->density;
+          send_params.accel = params->accel;
+          send_params.omega = params->omega;
+      }
+      types[0] = MPI_INT;
+      block_lengths[0] = 1;
+      MPI_Address(&(send_params.nx), &base_addr);
+      displacements[0] = 0;
+      types[1] = MPI_INT;
+      block_lengths[1] = 1;
+      MPI_Address(&(send_params.ny), &addr);
+      displacements[1] = addr - base_addr;
+      types[2] = MPI_INT;
+      block_lengths[2] = 1;
+      MPI_Address(&(send_params.maxIters), &addr);
+      displacements[2] = addr - base_addr;
+      types[3] = MPI_FLOAT;
+      block_lengths[3] = 1;
+      MPI_Address(&(send_params.reynolds_dim), &addr);
+      displacements[3] = addr - base_addr;
+      types[4] = MPI_FLOAT;
+      block_lengths[4] = 1;
+      MPI_Address(&(send_params.density), &addr);
+      displacements[4] = addr - base_addr;
+      types[5] = MPI_FLOAT;
+      block_lengths[5] = 1;
+      MPI_Address(&(send_params.accel), &addr);
+      displacements[5] = addr - base_addr;
+      types[6] = MPI_FLOAT;
+      block_lengths[6] = 1;
+      MPI_Address(&(send_params.omega), &addr);
+      displacements[6] = addr - base_addr;
+      
+      MPI_Type_create_struct(NUMPARAMS, block_lengths, displacements, types, &params_type);
+      MPI_Type_commit(&params_type);
+      MPI_Bcast(&send_params, 1, params_type, MASTER, MPI_COMM_WORLD);
+      
+      if (rank == MASTER) {
+          params->ny = send_params.ny + (params->ny % size);
+      } else {
+          params->nx = send_params.nx;
+          params->ny = send_params.ny;
+          params->maxIters = send_params.maxIters;
+          params->reynolds_dim = send_params.reynolds_dim;
+          params->density = send_params.density;
+          params->accel = send_params.accel;
+          params->omega = send_params.omega;
+      }
+  }
+  
+  printf("%d %d %d %d %f %f %f %f", rank, params->nx, params->ny, params->maxIters, params->reynolds_dim, params->density, params->accel, params->omega);
 
   /* 
   ** Allocate memory.
@@ -429,12 +496,12 @@ int initialise(const char* paramfile, const char* obstaclefile,
   */
 
   /* main grid */
-  *cells_ptr = (t_speed*)malloc(sizeof(t_speed)*(params->ny*params->nx));
+  *cells_ptr = (t_speed*)malloc(sizeof(t_speed)*((params->ny + 2)*params->nx));
   if (*cells_ptr == NULL) 
     die("cannot allocate memory for cells",__LINE__,__FILE__);
 
   /* 'helper' grid, used as scratch space */
-  *tmp_cells_ptr = (t_speed*)malloc(sizeof(t_speed)*(params->ny*params->nx));
+  *tmp_cells_ptr = (t_speed*)malloc(sizeof(t_speed)*((params->ny + 2)*params->nx));
   if (*tmp_cells_ptr == NULL) 
     die("cannot allocate memory for tmp_cells",__LINE__,__FILE__);
   
@@ -451,17 +518,17 @@ int initialise(const char* paramfile, const char* obstaclefile,
   for(ii=0;ii<params->ny;ii++) {
     for(jj=0;jj<params->nx;jj++) {
       /* centre */
-      (*cells_ptr)[ii*params->nx + jj].speeds[0] = w0;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[0] = w0;
       /* axis directions */
-      (*cells_ptr)[ii*params->nx + jj].speeds[1] = w1;
-      (*cells_ptr)[ii*params->nx + jj].speeds[2] = w1;
-      (*cells_ptr)[ii*params->nx + jj].speeds[3] = w1;
-      (*cells_ptr)[ii*params->nx + jj].speeds[4] = w1;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[1] = w1;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[2] = w1;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[3] = w1;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[4] = w1;
       /* diagonals */
-      (*cells_ptr)[ii*params->nx + jj].speeds[5] = w2;
-      (*cells_ptr)[ii*params->nx + jj].speeds[6] = w2;
-      (*cells_ptr)[ii*params->nx + jj].speeds[7] = w2;
-      (*cells_ptr)[ii*params->nx + jj].speeds[8] = w2;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[5] = w2;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[6] = w2;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[7] = w2;
+      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[8] = w2;
     }
   }
 
