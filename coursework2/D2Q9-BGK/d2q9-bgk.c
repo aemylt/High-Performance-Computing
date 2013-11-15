@@ -387,6 +387,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    blocked;        /* indicates whether a cell is blocked by an obstacle */ 
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
+  MPI_Aint base_addr, addr;
 
   if (rank == MASTER) {
       /* open the parameter file */
@@ -417,11 +418,10 @@ int initialise(const char* paramfile, const char* obstaclefile,
   }
   
   if (size > 1) {
-      MPI_Aint base_addr, addr;
-      MPI_Aint displacements[NUMPARAMS];
-      MPI_Datatype types[NUMPARAMS];
+      MPI_Aint displacements_params[NUMPARAMS];
+      MPI_Datatype types_params[NUMPARAMS];
       MPI_Datatype params_type;
-      int block_lengths[NUMPARAMS];
+      int block_lengths_params[NUMPARAMS];
       t_param send_params;
       if (rank == MASTER) {
           send_params.nx = params->nx;
@@ -432,36 +432,36 @@ int initialise(const char* paramfile, const char* obstaclefile,
           send_params.accel = params->accel;
           send_params.omega = params->omega;
       }
-      types[0] = MPI_INT;
-      block_lengths[0] = 1;
+      types_params[0] = MPI_INT;
+      block_lengths_params[0] = 1;
       MPI_Address(&(send_params.nx), &base_addr);
-      displacements[0] = 0;
-      types[1] = MPI_INT;
-      block_lengths[1] = 1;
+      displacements_params[0] = 0;
+      types_params[1] = MPI_INT;
+      block_lengths_params[1] = 1;
       MPI_Address(&(send_params.ny), &addr);
-      displacements[1] = addr - base_addr;
-      types[2] = MPI_INT;
-      block_lengths[2] = 1;
+      displacements_params[1] = addr - base_addr;
+      types_params[2] = MPI_INT;
+      block_lengths_params[2] = 1;
       MPI_Address(&(send_params.maxIters), &addr);
-      displacements[2] = addr - base_addr;
-      types[3] = MPI_FLOAT;
-      block_lengths[3] = 1;
+      displacements_params[2] = addr - base_addr;
+      types_params[3] = MPI_FLOAT;
+      block_lengths_params[3] = 1;
       MPI_Address(&(send_params.reynolds_dim), &addr);
-      displacements[3] = addr - base_addr;
-      types[4] = MPI_FLOAT;
-      block_lengths[4] = 1;
+      displacements_params[3] = addr - base_addr;
+      types_params[4] = MPI_FLOAT;
+      block_lengths_params[4] = 1;
       MPI_Address(&(send_params.density), &addr);
       displacements[4] = addr - base_addr;
       types[5] = MPI_FLOAT;
-      block_lengths[5] = 1;
+      block_lengths_params[5] = 1;
       MPI_Address(&(send_params.accel), &addr);
-      displacements[5] = addr - base_addr;
-      types[6] = MPI_FLOAT;
-      block_lengths[6] = 1;
+      displacements_params[5] = addr - base_addr;
+      types_params[6] = MPI_FLOAT;
+      block_lengths_params[6] = 1;
       MPI_Address(&(send_params.omega), &addr);
-      displacements[6] = addr - base_addr;
+      displacements_params[6] = addr - base_addr;
       
-      MPI_Type_create_struct(NUMPARAMS, block_lengths, displacements, types, &params_type);
+      MPI_Type_create_struct(NUMPARAMS, block_lengths_params, displacements_params, types_params, &params_type);
       MPI_Type_commit(&params_type);
       MPI_Bcast(&send_params, 1, params_type, MASTER, MPI_COMM_WORLD);
       
@@ -477,10 +477,6 @@ int initialise(const char* paramfile, const char* obstaclefile,
           params->omega = send_params.omega;
       }
   }
-  
-  printf("%d %d %d %d %d %f %f %f\n", rank, params->nx, params->ny, params->maxIters, params->reynolds_dim, params->density, params->accel, params->omega);
-
-  return EXIT_SUCCESS;
 
   /* 
   ** Allocate memory.
@@ -544,37 +540,79 @@ int initialise(const char* paramfile, const char* obstaclefile,
       (*obstacles_ptr)[ii*params->nx + jj] = 0;
     }
   }
-
-  /* open the obstacle data file */
-  fp = fopen(obstaclefile,"r");
-  if (fp == NULL) {
-    sprintf(message,"could not open input obstacles file: %s", obstaclefile);
-    die(message,__LINE__,__FILE__);
-  }
-
-  /* read-in the blocked cells list */
-  while( (retval = fscanf(fp,"%d %d %d\n", &xx, &yy, &blocked)) != EOF) {
-    /* some checks */
-    if ( retval != 3)
-      die("expected 3 values per line in obstacle file",__LINE__,__FILE__);
-    if ( xx<0 || xx>params->nx-1 )
-      die("obstacle x-coord out of range",__LINE__,__FILE__);
-    if ( yy<0 || yy>params->ny-1 )
-      die("obstacle y-coord out of range",__LINE__,__FILE__);
-    if ( blocked != 1 ) 
-      die("obstacle blocked value should be 1",__LINE__,__FILE__);
-    /* assign to array */
-    (*obstacles_ptr)[yy*params->nx + xx] = blocked;
-  }
   
-  /* and close the file */
-  fclose(fp);
+  MPI_Aint displacements_obstacles[3];
+  MPI_Datatype types_obstacles[3];
+  MPI_Datatype obtacles_type;
+  int block_lengths_obstacles[3];
 
-  /* 
-  ** allocate space to hold a record of the avarage velocities computed 
-  ** at each timestep
-  */
-  *av_vels_ptr = (float*)malloc(sizeof(float)*params->maxIters);
+  MPI_Address(&xx, &base_addr);
+  displacements_obstacles[0] = 0;
+  types_obstacles[0] = MPI_INT;
+  block_lengths_obstacles[0] = 1;
+  MPI_Address(&xx, &addr);
+  displacements_obstacles[1] = addr - base_addr;
+  types_obstacles[1] = MPI_INT;
+  block_lengths_obstacles[1] = 1;
+  MPI_Address(&xx, &addr);
+  displacements_obstacles[2] = addr - base_addr;
+  types_obstacles[2] = MPI_INT;
+  block_lengths_obstacles[2] = 1;
+  MPI_Type_create_struct(3, block_lengths_obstacles, displacements_obstacles, types_obstacles, &obstacles_type);
+  MPI_Commit(&obstacles_type);
+
+  if (rank == MASTER) {
+      /* open the obstacle data file */
+      fp = fopen(obstaclefile,"r");
+      if (fp == NULL) {
+          sprintf(message,"could not open input obstacles file: %s", obstaclefile);
+          die(message,__LINE__,__FILE__);
+      }
+
+      /* read-in the blocked cells list */
+      while( (retval = fscanf(fp,"%d %d %d\n", &xx, &yy, &blocked)) != EOF) {
+        /* some checks */
+          if ( retval != 3)
+              die("expected 3 values per line in obstacle file",__LINE__,__FILE__);
+          if ( xx<0 || xx>params->nx-1 )
+              die("obstacle x-coord out of range",__LINE__,__FILE__);
+          if ( blocked != 1 ) 
+              die("obstacle blocked value should be 1",__LINE__,__FILE__);
+          int dest = (yy - (params->ny) % size) / size;
+          if (dest > 0) {
+              yy = (yy - (params->ny) % size) % size;
+              MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD);
+          } else {
+              if ( yy<0 || yy>params->ny-1 )
+                  die("obstacle y-coord out of range",__LINE__,__FILE__);
+              /* assign to array */
+              (*obstacles_ptr)[yy*params->nx + xx] = blocked;
+          }
+      }
+
+      /* and close the file */
+      fclose(fp);
+      xx = -1;
+      for (ii = 1; ii < size; i++) {
+          MPI_Send(&xx, 1, obstacles_type, ii, 0, MPI_COMM_WORLD);
+      }
+
+      /* 
+      ** allocate space to hold a record of the avarage velocities computed 
+      ** at each timestep
+      */
+      *av_vels_ptr = (float*)malloc(sizeof(float)*params->maxIters);
+  } else {
+      MPI_Status status;
+      MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
+      while (xx != -1) {
+          if ( yy<0 || yy>params->ny-1 )
+              die("obstacle y-coord out of range",__LINE__,__FILE__);
+          /* assign to array */
+          (*obstacles_ptr)[yy*params->nx + xx] = blocked;
+          MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
+      }
+  }
 
   return EXIT_SUCCESS;
 }
