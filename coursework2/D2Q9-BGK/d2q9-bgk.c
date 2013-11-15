@@ -388,7 +388,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
   MPI_Aint base_addr, addr;
-  int distribution, remainder;
+  int distribution = 0, remainder = 0;
 
   if (rank == MASTER) {
       /* open the parameter file */
@@ -553,11 +553,11 @@ int initialise(const char* paramfile, const char* obstaclefile,
   displacements_obstacles[0] = 0;
   types_obstacles[0] = MPI_INT;
   block_lengths_obstacles[0] = 1;
-  MPI_Address(&xx, &addr);
+  MPI_Address(&yy, &addr);
   displacements_obstacles[1] = addr - base_addr;
   types_obstacles[1] = MPI_INT;
   block_lengths_obstacles[1] = 1;
-  MPI_Address(&xx, &addr);
+  MPI_Address(&blocked, &addr);
   displacements_obstacles[2] = addr - base_addr;
   types_obstacles[2] = MPI_INT;
   block_lengths_obstacles[2] = 1;
