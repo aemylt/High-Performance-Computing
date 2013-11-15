@@ -578,12 +578,12 @@ int initialise(const char* paramfile, const char* obstaclefile,
               die("obstacle x-coord out of range",__LINE__,__FILE__);
           if ( blocked != 1 ) 
               die("obstacle blocked value should be 1",__LINE__,__FILE__);
-          int dest = (yy - (params->ny) % size) / size;
-          if (dest > 0) {
+          if (yy > params->ny - 1) {
+              int dest = (yy - (params->ny) % size) / size;
               yy = (yy - (params->ny) % size) % size;
               MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD);
           } else {
-              if ( yy<0 || yy>params->ny-1 )
+              if ( yy<0 )
                   die("obstacle y-coord out of range",__LINE__,__FILE__);
               /* assign to array */
               (*obstacles_ptr)[yy*params->nx + xx] = blocked;
