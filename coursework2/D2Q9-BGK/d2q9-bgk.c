@@ -388,6 +388,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
   MPI_Aint base_addr, addr;
+  int distribution, remainder;
 
   if (rank == MASTER) {
       /* open the parameter file */
@@ -426,6 +427,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
       if (rank == MASTER) {
           send_params.nx = params->nx;
           send_params.ny = params->ny / (size);
+          distribution = send_params.ny;
           send_params.maxIters = params->maxIters;
           send_params.reynolds_dim = params->reynolds_dim;
           send_params.density = params->density;
@@ -466,7 +468,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
       MPI_Bcast(&send_params, 1, params_type, MASTER, MPI_COMM_WORLD);
       
       if (rank == MASTER) {
-          params->ny = send_params.ny + (params->ny % size);
+          remainder = params->ny % size;
+          params->ny = send_params.ny + remainder;
       } else {
           params->nx = send_params.nx;
           params->ny = send_params.ny;
@@ -579,8 +582,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
           if ( blocked != 1 ) 
               die("obstacle blocked value should be 1",__LINE__,__FILE__);
           if (yy > params->ny - 1) {
-              int dest = (yy - (params->ny) % size) / size;
-              yy = (yy - (params->ny) % size) % size;
+              int dest = (yy - remainder) / distribution;
+              yy = (yy - remainder) % distribution;
               MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD);
           } else {
               if ( yy<0 )
