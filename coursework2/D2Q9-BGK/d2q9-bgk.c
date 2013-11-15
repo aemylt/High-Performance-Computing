@@ -610,7 +610,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
               die("obstacle y-coord out of range",__LINE__,__FILE__);
           /* assign to array */
           (*obstacles_ptr)[yy*params->nx + xx] = blocked;
-          MPI_Recv(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
+          MPI_Recv(&xx, 1, obstacles_type, MASTER, 0, MPI_COMM_WORLD, &status);
       }
   }
 
