@@ -451,8 +451,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
       types_params[4] = MPI_FLOAT;
       block_lengths_params[4] = 1;
       MPI_Address(&(send_params.density), &addr);
-      displacements[4] = addr - base_addr;
-      types[5] = MPI_FLOAT;
+      displacements_params[4] = addr - base_addr;
+      types_params[5] = MPI_FLOAT;
       block_lengths_params[5] = 1;
       MPI_Address(&(send_params.accel), &addr);
       displacements_params[5] = addr - base_addr;
@@ -543,7 +543,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   
   MPI_Aint displacements_obstacles[3];
   MPI_Datatype types_obstacles[3];
-  MPI_Datatype obtacles_type;
+  MPI_Datatype obstacles_type;
   int block_lengths_obstacles[3];
 
   MPI_Address(&xx, &base_addr);
@@ -559,7 +559,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   types_obstacles[2] = MPI_INT;
   block_lengths_obstacles[2] = 1;
   MPI_Type_create_struct(3, block_lengths_obstacles, displacements_obstacles, types_obstacles, &obstacles_type);
-  MPI_Commit(&obstacles_type);
+  MPI_Type_commit(&obstacles_type);
 
   if (rank == MASTER) {
       /* open the obstacle data file */
@@ -593,7 +593,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
       /* and close the file */
       fclose(fp);
       xx = -1;
-      for (ii = 1; ii < size; i++) {
+      for (ii = 1; ii < size; ii++) {
           MPI_Send(&xx, 1, obstacles_type, ii, 0, MPI_COMM_WORLD);
       }
 
@@ -604,13 +604,13 @@ int initialise(const char* paramfile, const char* obstaclefile,
       *av_vels_ptr = (float*)malloc(sizeof(float)*params->maxIters);
   } else {
       MPI_Status status;
-      MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
+      MPI_Recv(&xx, 1, obstacles_type, MASTER, 0, MPI_COMM_WORLD, &status);
       while (xx != -1) {
           if ( yy<0 || yy>params->ny-1 )
               die("obstacle y-coord out of range",__LINE__,__FILE__);
           /* assign to array */
           (*obstacles_ptr)[yy*params->nx + xx] = blocked;
-          MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
+          MPI_Recv(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD, &status);
       }
   }
 
