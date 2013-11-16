@@ -159,13 +159,13 @@ int main(int argc, char* argv[])
   initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank);
   
   MPI_Finalize();
+  
+  return EXIT_SUCCESS;
   displacements_cells[0] = 0;
   types_cells[0] = MPI_FLOAT;
   block_length_cells[0] = NSPEEDS;
   MPI_Type_create_struct(1, block_length_cells, displacements_cells, types_cells, &cells_type);
   MPI_Type_commit(&cells_type);
-  
-  return EXIT_SUCCESS;
 
   if (rank == MASTER) {
       /* iterate for maxIters timesteps */
