@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   displacements_cells[0] = 0;
   types_cells[0] = MPI_FLOAT;
   block_length_cells[0] = NSPEEDS;
-  MPI_Type_create_struct(1, displacements_cells, types_cells, block_length_cells, &cells_type);
+  MPI_Type_create_struct(1, block_length_cells, displacements_cells, types_cells, &cells_type);
   MPI_Type_commit(&cells_type);
   
   return EXIT_SUCCESS;
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
       timstr=ru.ru_stime;        
       systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
   }
-  int reynolds = calc_reynolds(params,cells,obstacles, size, rank, cells_type);
+  float reynolds = calc_reynolds(params,cells,obstacles, size, rank, cells_type);
   if (rank == MASTER) {
       /* write final values and free memory */
       printf("==done==\n");
