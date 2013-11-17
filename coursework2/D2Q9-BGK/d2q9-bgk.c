@@ -233,7 +233,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
   for(ii=1;ii<=params.ny;ii++) {
     /* if the cell is not occupied and
     ** we don't send a density negative */
-    if( !obstacles[ii*params.nx + jj] && 
+    if( !obstacles[(ii - 1)*params.nx + jj] && 
         (cells[ii*params.nx + jj].speeds[3] - w1) > 0.0 &&
         (cells[ii*params.nx + jj].speeds[6] - w2) > 0.0 &&
         (cells[ii*params.nx + jj].speeds[7] - w2) > 0.0 ) {
@@ -314,7 +314,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* if the cell contains an obstacle */
-      if(obstacles[ii*params.nx + jj]) {
+      if(obstacles[(ii - 1)*params.nx + jj]) {
           /* called after propagate, so taking values from scratch space
           ** mirroring, and writing into main grid */
           cells[ii*params.nx + jj].speeds[1] = tmp_cells[ii*params.nx + jj].speeds[3];
@@ -681,7 +681,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
-      if(!obstacles[ii*params.nx + jj]) {
+      if(!obstacles[(ii - 1)*params.nx + jj]) {
         /* local density total */
         local_density = 0.0;
         for(kk=0;kk<NSPEEDS;kk++) {
@@ -750,7 +750,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* an occupied cell */
-      if(obstacles[ii*params.nx + jj]) {
+      if(obstacles[(ii - 1)*params.nx + jj]) {
         u_x = u_y = 0.0;
         pressure = params.density * c_sq;
       }
