@@ -99,7 +99,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
 int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type);
 int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels);
+int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels, int size, int rank);
 
 /* finalise, including freeing up allocated memory */
 int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
@@ -203,8 +203,8 @@ int main(int argc, char* argv[])
       printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
-      write_values(params,cells,obstacles,av_vels);
   }
+  write_values(params,cells,obstacles,av_vels,size,rank);
   finalise(&params, &cells, &tmp_cells, &obstacles, &av_vels);
   MPI_Type_free(&cells_type);
   
@@ -271,7 +271,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
 
   /* loop over _all_ cells */
   for(ii=1;ii<=params.ny;ii++) {
-    for(jj=1;jj<=params.nx;jj++) {
+    for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
       y_n = (ii + 1) % params.ny;
@@ -315,7 +315,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
   ** the propagate step and so values of interest
   ** are in the scratch-space grid */
   for(ii=1;ii<=params.ny;ii++) {
-    for(jj=1;jj<=params.nx;jj++) {
+    for(jj=0;jj<params.nx;jj++) {
       /* if the cell contains an obstacle */
       if(obstacles[ii*params.nx + jj]) {
           /* called after propagate, so taking values from scratch space
@@ -549,7 +549,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   w2 = params->density      /36.0;
 
   for(ii=1;ii<=params->ny;ii++) {
-    for(jj=1;jj<=params->nx;jj++) {
+    for(jj=0;jj<params->nx;jj++) {
       /* centre */
       (*cells_ptr)[ii*params->nx + jj].speeds[0] = w0;
       /* axis directions */
@@ -673,15 +673,15 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
 float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
   int    ii,jj,kk;       /* generic counters */
-  int    tot_cells = 0;  /* no. of cells used in calculation */
+  int    tot_cells, tmp_cells = 0;  /* no. of cells used in calculation */
   float local_density;  /* total density in cell */
-  float tot_u_x;        /* accumulated x-components of velocity */
+  float tot_u_x, tmp_u_x;        /* accumulated x-components of velocity */
 
   /* initialise */
-  tot_u_x = 0.0;
+  tmp_u_x = 0.0;
 
   /* loop over all non-blocked cells */
-  for(ii=0;ii<params.ny;ii++) {
+  for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
       if(!obstacles[ii*params.nx + jj]) {
@@ -691,7 +691,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
           local_density += cells[ii*params.nx + jj].speeds[kk];
         }
         /* x-component of velocity */
-        tot_u_x += (cells[ii*params.nx + jj].speeds[1] +
+        tmp_u_x += (cells[ii*params.nx + jj].speeds[1] +
                     cells[ii*params.nx + jj].speeds[5] +
                     cells[ii*params.nx + jj].speeds[8]
                     - (cells[ii*params.nx + jj].speeds[3] +
@@ -699,12 +699,14 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
                        cells[ii*params.nx + jj].speeds[7])) /
           local_density;
         /* increase counter of inspected cells */
-        ++tot_cells;
+        ++tmp_cells;
       }
     }
   }
+  MPI_Reduce(&tmp_u_x, &tot_u_x, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);
+  MPI_Reduce(&tmp_cells, &tot_cells, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);
 
-  return tot_u_x / (float)tot_cells;
+  return (rank == MASTER) ? tot_u_x / (float)tot_cells : EXIT_SUCCESS;
 }
 
 float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
@@ -717,20 +719,21 @@ float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int si
 float total_density(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type)
 {
   int ii,jj,kk;        /* generic counters */
-  float total = 0.0;  /* accumulator */
+  float total, tmp_total = 0.0;  /* accumulator */
 
-  for(ii=0;ii<params.ny;ii++) {
+  for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       for(kk=0;kk<NSPEEDS;kk++) {
-        total += cells[ii*params.nx + jj].speeds[kk];
+        tmp_total += cells[ii*params.nx + jj].speeds[kk];
       }
     }
   }
+  MPI_Reduce(&tmp_total, &total, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);
   
   return total;
 }
 
-int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels)
+int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels, int size, int rank)
 {
   FILE* fp;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
@@ -739,13 +742,20 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   float pressure;              /* fluid pressure in grid cell */
   float u_x;                   /* x-component of velocity in grid cell */
   float u_y;                   /* y-component of velocity in grid cell */
+  MPI_Aint addr, base_addr;
+  MPI_Datatype type_final_state[6];
+  MPI_Datatype final_state_type;
+  MPI_Aint displacements_final_state[6];
+  int block_length_final_state[6];
 
-  fp = fopen(FINALSTATEFILE,"w");
-  if (fp == NULL) {
-    die("could not open file output file",__LINE__,__FILE__);
+  if (rank == MASTER) {
+      fp = fopen(FINALSTATEFILE,"w");
+      if (fp == NULL) {
+        die("could not open file output file",__LINE__,__FILE__);
+      }
   }
 
-  for(ii=0;ii<params.ny;ii++) {
+  for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* an occupied cell */
       if(obstacles[ii*params.nx + jj]) {
@@ -778,21 +788,24 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
         pressure = local_density * c_sq;
       }
       /* write to file */
-      fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii,jj,u_x,u_y,pressure,obstacles[ii*params.nx + jj]);
+      if (rank == MASTER) {
+          fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii,jj,u_x,u_y,pressure,obstacles[ii*params.nx + jj]);
+      }
     }
   }
 
-  fclose(fp);
-
-  fp = fopen(AVVELSFILE,"w");
-  if (fp == NULL) {
-    die("could not open file output file",__LINE__,__FILE__);
+  if (rank == MASTER) {
+      fclose(fp);
+      fp = fopen(AVVELSFILE,"w");
+      if (fp == NULL) {
+        die("could not open file output file",__LINE__,__FILE__);
+      }
+      for (ii=0;ii<params.maxIters;ii++) {
+        fprintf(fp,"%d:\t%.12E\n", ii, av_vels[ii]);
+      }
+    
+      fclose(fp);
   }
-  for (ii=0;ii<params.maxIters;ii++) {
-    fprintf(fp,"%d:\t%.12E\n", ii, av_vels[ii]);
-  }
-
-  fclose(fp);
 
   return EXIT_SUCCESS;
 }
