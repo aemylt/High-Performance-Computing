@@ -4,7 +4,7 @@ EXE1=d2q9-bgk.exe
 EXES=$(EXE1)
 
 CC=mpicc
-CFLAGS=-lm -Wall -O3
+CFLAGS=-lm -Wall -O3 -DDEBUG
 
 all: $(EXES)
 
