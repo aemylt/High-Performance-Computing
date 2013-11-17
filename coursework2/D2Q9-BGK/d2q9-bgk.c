@@ -135,9 +135,9 @@ int main(int argc, char* argv[])
   int      ii;                /* generic counter */
   struct timeval timstr;      /* structure to hold elapsed time */
   struct rusage ru;           /* structure to hold CPU time--system and user */
-  double tic = 0,toc;             /* floating point numbers to calculate elapsed wallclock time */
-  double usrtim;              /* floating point number to record elapsed user CPU time */
-  double systim;              /* floating point number to record elapsed system CPU time */
+  double tic = 0,toc = 0;             /* floating point numbers to calculate elapsed wallclock time */
+  double usrtim = 0;              /* floating point number to record elapsed user CPU time */
+  double systim = 0;              /* floating point number to record elapsed system CPU time */
   int size, rank;
   MPI_Datatype cells_type;
   MPI_Aint displacements_cells[1];
