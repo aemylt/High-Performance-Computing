@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
   double usrtim = 0;              /* floating point number to record elapsed user CPU time */
   double systim = 0;              /* floating point number to record elapsed system CPU time */
   int size, rank;
-  int tmp_av_vels;
+  float tmp_av_vels;
   MPI_Datatype cells_type;
   MPI_Aint displacements_cells[1];
   MPI_Datatype types_cells[1];
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
     tmp_av_vels = av_velocity(params,cells,obstacles, size, rank, cells_type);
     if (rank == MASTER) av_vels[ii] = tmp_av_vels;
 #ifdef DEBUG
-    int density = total_density(params,cells, size, rank, cells_type);
+    float density = total_density(params,cells, size, rank, cells_type);
     if (rank == MASTER) {
         printf("==timestep: %d==\n",ii);
         printf("av velocity: %.12E\n", av_vels[ii]);
@@ -705,8 +705,11 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
   }
   MPI_Reduce(&tmp_u_x, &tot_u_x, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);
   MPI_Reduce(&tmp_cells, &tot_cells, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);
-
-  return (rank == MASTER) ? tot_u_x / (float)tot_cells : EXIT_SUCCESS;
+  if (rank == MASTER) {
+      return tot_u_x / (float)tot_cells;
+  } else {
+      return 0;
+  }
 }
 
 float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
