@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
   double usrtim = 0;              /* floating point number to record elapsed user CPU time */
   double systim = 0;              /* floating point number to record elapsed system CPU time */
   int size, rank;
+  int tmp_av_vels;
   MPI_Datatype cells_type;
   MPI_Aint displacements_cells[1];
   MPI_Datatype types_cells[1];
@@ -173,7 +174,9 @@ int main(int argc, char* argv[])
 
   for (ii=0;ii<params.maxIters;ii++) {
     timestep(params,cells,tmp_cells,obstacles, size, rank, cells_type);
-    av_vels[ii] = av_velocity(params,cells,obstacles, size, rank, cells_type);
+    
+    tmp_av_vels = av_velocity(params,cells,obstacles, size, rank, cells_type);
+    if (rank == MASTER) av_vels[ii] = tmp_av_vels;
 #ifdef DEBUG
     int density = total_density(params,cells, size, rank, cells_type);
     if (rank == MASTER) {
