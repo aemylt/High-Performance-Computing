@@ -96,6 +96,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
 */
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type);
 int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
+int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type);
 int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels);
@@ -215,6 +216,7 @@ int main(int argc, char* argv[])
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
   accelerate_flow(params,cells,obstacles);
+  synchronise(params, cells, MPI_Datatype cells_type);
   propagate(params,cells,tmp_cells, size, rank);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
@@ -231,7 +233,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
 
   /* modify the first column of the grid */
   jj=0;
-  for(ii=0;ii<params.ny;ii++) {
+  for(ii=1;ii<=params.ny;ii++) {
     /* if the cell is not occupied and
     ** we don't send a density negative */
     if( !obstacles[ii*params.nx + jj] && 
@@ -252,14 +254,24 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
   return EXIT_SUCCESS;
 }
 
+int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type)
+{
+    int right = (rank + 1) % size;
+    int left = (rank == MASTER) ? size - 1 : rank - 1;
+    MPI_Status status;
+    MPI_Sendrecv(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, cells, params.nx, cells_type, left, 0, MPI_COMM_WORLD, &status);
+    MPI_Sendrecv(&(cells[params.nx]), params.nx, cells_type, left, 0, &(cells[(params.ny + 1)*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, &status);
+    return EXIT_SUCCESS;
+}
+
 int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank)
 {
   int ii,jj;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
 
   /* loop over _all_ cells */
-  for(ii=0;ii<params.ny;ii++) {
-    for(jj=0;jj<params.nx;jj++) {
+  for(ii=1;ii<=params.ny;ii++) {
+    for(jj=1;jj<=params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
       y_n = (ii + 1) % params.ny;
@@ -302,8 +314,8 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
   ** NB the collision step is called after
   ** the propagate step and so values of interest
   ** are in the scratch-space grid */
-  for(ii=0;ii<params.ny;ii++) {
-    for(jj=0;jj<params.nx;jj++) {
+  for(ii=1;ii<=params.ny;ii++) {
+    for(jj=1;jj<=params.nx;jj++) {
       /* if the cell contains an obstacle */
       if(obstacles[ii*params.nx + jj]) {
           /* called after propagate, so taking values from scratch space
@@ -536,20 +548,20 @@ int initialise(const char* paramfile, const char* obstaclefile,
   w1 = params->density      /9.0;
   w2 = params->density      /36.0;
 
-  for(ii=0;ii<params->ny;ii++) {
-    for(jj=0;jj<params->nx;jj++) {
+  for(ii=1;ii<=params->ny;ii++) {
+    for(jj=1;jj<=params->nx;jj++) {
       /* centre */
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[0] = w0;
+      (*cells_ptr)[ii*params->nx + jj].speeds[0] = w0;
       /* axis directions */
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[1] = w1;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[2] = w1;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[3] = w1;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[4] = w1;
+      (*cells_ptr)[ii*params->nx + jj].speeds[1] = w1;
+      (*cells_ptr)[ii*params->nx + jj].speeds[2] = w1;
+      (*cells_ptr)[ii*params->nx + jj].speeds[3] = w1;
+      (*cells_ptr)[ii*params->nx + jj].speeds[4] = w1;
       /* diagonals */
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[5] = w2;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[6] = w2;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[7] = w2;
-      (*cells_ptr)[(ii + 1)*params->nx + jj].speeds[8] = w2;
+      (*cells_ptr)[ii*params->nx + jj].speeds[5] = w2;
+      (*cells_ptr)[ii*params->nx + jj].speeds[6] = w2;
+      (*cells_ptr)[ii*params->nx + jj].speeds[7] = w2;
+      (*cells_ptr)[ii*params->nx + jj].speeds[8] = w2;
     }
   }
 
