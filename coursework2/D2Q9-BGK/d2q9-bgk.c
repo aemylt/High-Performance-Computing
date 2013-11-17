@@ -158,10 +158,7 @@ int main(int argc, char* argv[])
 
   /* initialise our data structures and load values from file */
   initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank);
-  
-  MPI_Finalize();
-  
-  return EXIT_SUCCESS;
+
   displacements_cells[0] = 0;
   types_cells[0] = MPI_FLOAT;
   block_length_cells[0] = NSPEEDS;
