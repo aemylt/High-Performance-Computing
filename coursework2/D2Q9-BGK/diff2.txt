@@ -1,0 +1,22 @@
+1,2c1,2
+< Running on host node013
+< Time is Sun Nov 17 22:13:00 GMT 2013
+---
+> Running on host node001
+> Time is Sun Nov 17 22:16:46 GMT 2013
+4c4
+< PBS job ID is 677643.bluecrystal1.cm.cluster
+---
+> PBS job ID is 677649.bluecrystal1.cm.cluster
+6c6
+< node013.cm.cluster
+---
+> node001.cm.cluster
+1074,1076c1074,1076
+< Elapsed time:			0.005217 (s)
+< Elapsed user CPU time:		0.004999 (s)
+< Elapsed system CPU time:	0.000999 (s)
+---
+> Elapsed time:			0.005267 (s)
+> Elapsed user CPU time:		0.005999 (s)
+> Elapsed system CPU time:	0.001999 (s)
