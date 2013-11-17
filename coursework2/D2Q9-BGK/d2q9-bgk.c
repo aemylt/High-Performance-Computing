@@ -215,8 +215,16 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
+  int ii, jj;
   accelerate_flow(params,cells,obstacles);
   synchronise(params, cells, size, rank, cells_type);
+  if (rank == MASTER) {
+    for (ii = 0; ii < params.ny + 2; ii++) {
+      for (jj = 0; jj < params.nx; jj++) {
+        printf("%d %d %f %f %f %f %f %f %f %f %f\n", ii, jj, cells[ii*params.nx + jj].speeds[0], cells[ii*params.nx + jj].speeds[1], cells[ii*params.nx + jj].speeds[2], cells[ii*params.nx + jj].speeds[3], cells[ii*params.nx + jj].speeds[4], cells[ii*params.nx + jj].speeds[5], cells[ii*params.nx + jj].speeds[6], cells[ii*params.nx + jj].speeds[7], cells[ii*params.nx + jj].speeds[8]);
+      }
+    }
+  }
   propagate(params,cells,tmp_cells, size, rank);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
