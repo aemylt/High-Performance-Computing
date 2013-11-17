@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
   accelerate_flow(params,cells,obstacles);
-  synchronise(params, cells, MPI_Datatype cells_type);
+  synchronise(params, cells, size, rank, cells_type);
   propagate(params,cells,tmp_cells, size, rank);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
@@ -742,11 +742,6 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   float pressure;              /* fluid pressure in grid cell */
   float u_x;                   /* x-component of velocity in grid cell */
   float u_y;                   /* y-component of velocity in grid cell */
-  MPI_Aint addr, base_addr;
-  MPI_Datatype type_final_state[6];
-  MPI_Datatype final_state_type;
-  MPI_Aint displacements_final_state[6];
-  int block_length_final_state[6];
 
   if (rank == MASTER) {
       fp = fopen(FINALSTATEFILE,"w");
