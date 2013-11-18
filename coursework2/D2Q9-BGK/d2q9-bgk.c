@@ -416,6 +416,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   float w0,w1,w2;       /* weighting factors */
   MPI_Aint base_addr, addr;
   int remainder = 0;
+  int distribution = 0;
 
   if (rank == MASTER) {
       /* open the parameter file */
