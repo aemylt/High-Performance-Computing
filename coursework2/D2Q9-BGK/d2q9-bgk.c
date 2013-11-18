@@ -219,14 +219,14 @@ int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obst
   accelerate_flow(params,cells,obstacles);
   synchronise(params, cells, size, rank, cells_type);
   propagate(params,cells,tmp_cells, size, rank);
-  rebound_or_collision(params,cells,tmp_cells,obstacles);
   if (rank == MASTER) {
     for (ii = 0; ii < params.ny + 2; ii++) {
       for (jj = 0; jj < params.nx; jj++) {
-        printf("%d %d %f %f %f %f %f %f %f %f %f\n", ii, jj, cells[ii*params.nx + jj].speeds[0], cells[ii*params.nx + jj].speeds[1], cells[ii*params.nx + jj].speeds[2], cells[ii*params.nx + jj].speeds[3], cells[ii*params.nx + jj].speeds[4], cells[ii*params.nx + jj].speeds[5], cells[ii*params.nx + jj].speeds[6], cells[ii*params.nx + jj].speeds[7], cells[ii*params.nx + jj].speeds[8]);
+        printf("%d %d %f %f %f %f %f %f %f %f %f\n", ii, jj, tmp_cells[ii*params.nx + jj].speeds[0], tmp_cells[ii*params.nx + jj].speeds[1], tmp_cells[ii*params.nx + jj].speeds[2], tmp_cells[ii*params.nx + jj].speeds[3], tmp_cells[ii*params.nx + jj].speeds[4], tmp_cells[ii*params.nx + jj].speeds[5], tmp_cells[ii*params.nx + jj].speeds[6], tmp_cells[ii*params.nx + jj].speeds[7], tmp_cells[ii*params.nx + jj].speeds[8]);
       }
     }
   }
+  rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
 
@@ -284,7 +284,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
       ** respecting periodic boundary conditions (wrap around) */
       y_n = (ii + 1) % params.ny;
       x_e = (jj + 1) % params.nx;
-      y_s = (ii == 0) ? (ii + params.ny - 1) : (ii - 1);
+      y_s = ii - 1;
       x_w = (jj == 0) ? (jj + params.nx - 1) : (jj - 1);
       /* propagate densities to neighbouring cells, following
       ** appropriate directions of travel and writing into
