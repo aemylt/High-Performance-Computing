@@ -215,17 +215,9 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
-  int ii, jj;
   accelerate_flow(params,cells,obstacles);
   synchronise(params, cells, size, rank, cells_type);
   propagate(params,cells,tmp_cells, size, rank);
-  if (rank == MASTER) {
-    for (ii = 0; ii < params.ny + 2; ii++) {
-      for (jj = 0; jj < params.nx; jj++) {
-        printf("%d %d %f %f %f %f %f %f %f %f %f\n", ii, jj, tmp_cells[ii*params.nx + jj].speeds[0], tmp_cells[ii*params.nx + jj].speeds[1], tmp_cells[ii*params.nx + jj].speeds[2], tmp_cells[ii*params.nx + jj].speeds[3], tmp_cells[ii*params.nx + jj].speeds[4], tmp_cells[ii*params.nx + jj].speeds[5], tmp_cells[ii*params.nx + jj].speeds[6], tmp_cells[ii*params.nx + jj].speeds[7], tmp_cells[ii*params.nx + jj].speeds[8]);
-      }
-    }
-  }
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
@@ -282,7 +274,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
-      y_n = (ii + 1) % params.ny;
+      y_n = ii + 1;
       x_e = (jj + 1) % params.nx;
       y_s = ii - 1;
       x_w = (jj == 0) ? (jj + params.nx - 1) : (jj - 1);

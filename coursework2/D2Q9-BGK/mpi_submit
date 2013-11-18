@@ -22,7 +22,7 @@
 application="./d2q9-bgk.exe"
 
 #! Run options for the application
-options="test.params obstacles_30x20.dat"
+options="input_300x200.params obstacles_300x200.dat"
 
 ###############################################################
 ### You should not have to change anything below this line ####
