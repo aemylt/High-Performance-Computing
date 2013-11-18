@@ -218,6 +218,8 @@ int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obst
   int ii, jj;
   accelerate_flow(params,cells,obstacles);
   synchronise(params, cells, size, rank, cells_type);
+  propagate(params,cells,tmp_cells, size, rank);
+  rebound_or_collision(params,cells,tmp_cells,obstacles);
   if (rank == MASTER) {
     for (ii = 0; ii < params.ny + 2; ii++) {
       for (jj = 0; jj < params.nx; jj++) {
@@ -225,8 +227,6 @@ int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obst
       }
     }
   }
-  propagate(params,cells,tmp_cells, size, rank);
-  rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
 
