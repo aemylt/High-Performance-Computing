@@ -87,7 +87,7 @@ enum boolean { FALSE, TRUE };
 /* load params, allocate memory, load obstacles & initialise fluid particle densities */
 int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-               int** obstacles_ptr, float** av_vels_ptr, int size, int rank);
+               int** obstacles_ptr, float** av_vels_ptr, int size, int rank, int* distribution);
 
 /* 
 ** The main calculation methods.
@@ -144,6 +144,7 @@ int main(int argc, char* argv[])
   MPI_Aint displacements_cells[1];
   MPI_Datatype types_cells[1];
   int block_length_cells[1];
+  int distribution;
 
   /* parse the command line */
   if(argc != 3) {
@@ -158,7 +159,7 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   /* initialise our data structures and load values from file */
-  initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank);
+  initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank, &distribution);
 
   displacements_cells[0] = 0;
   types_cells[0] = MPI_FLOAT;
@@ -405,7 +406,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
 
 int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
-               int** obstacles_ptr, float** av_vels_ptr, int size, int rank)
+               int** obstacles_ptr, float** av_vels_ptr, int size, int rank, int* distribution)
 {
   char   message[1024];  /* message buffer */
   FILE   *fp;            /* file pointer */
@@ -415,7 +416,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
   MPI_Aint base_addr, addr;
-  int distribution = 0, remainder = 0;
+  int remainder = 0;
 
   if (rank == MASTER) {
       /* open the parameter file */
@@ -454,7 +455,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
       if (rank == MASTER) {
           send_params.nx = params->nx;
           send_params.ny = params->ny / (size);
-          distribution = send_params.ny;
+          *distribution = send_params.ny;
           send_params.maxIters = params->maxIters;
           send_params.reynolds_dim = params->reynolds_dim;
           send_params.density = params->density;
@@ -610,8 +611,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
           if ( blocked != 1 ) 
               die("obstacle blocked value should be 1",__LINE__,__FILE__);
           if (yy > params->ny - 1) {
-              int dest = (yy - remainder) / distribution;
-              yy = (yy - remainder) % distribution;
+              int dest = (yy - remainder) / (*distribution);
+              yy = (yy - remainder) % (*distribution);
               MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD);
           } else {
               if ( yy<0 )
