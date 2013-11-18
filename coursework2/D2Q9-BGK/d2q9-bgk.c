@@ -819,7 +819,9 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   MPI_Gatherv(obstacles, send_cells, MPI_INT, recv_obstacles, recv_cnt, recv_disp, MPI_INT, MASTER, MPI_COMM_WORLD);
 
   if (rank == MASTER) {
-          fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii,jj,u_x[(ii - 1)*params.nx + jj],u_y[(ii - 1)*params.nx + jj],pressure[(ii - 1)*params.nx + jj],obstacles[(ii - 1)*params.nx + jj]);
+      for (ii = 0; ii < recv_cells; ii++) {
+          fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii / params.nx,ii % params.nx,recv_u_x[ii],recv_u_y[ii],recv_pressure[ii],recv_obstacles[ii]);
+      }
       fclose(fp);
       fp = fopen(AVVELSFILE,"w");
       if (fp == NULL) {
