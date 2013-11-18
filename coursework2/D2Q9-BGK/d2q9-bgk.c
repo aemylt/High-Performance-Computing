@@ -743,11 +743,13 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   FILE* fp;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
   int y_cnt = params.ny;
+  int send_cells = distribution*params.nx;
   const float c_sq = 1.0/3.0;  /* sq. of speed of sound */
   float local_density;         /* per grid cell sum of densities */
-  float pressure[distribution];              /* fluid pressure in grid cell */
-  float u_x[distribution];                   /* x-component of velocity in grid cell */
-  float u_y[distribution];                   /* y-component of velocity in grid cell */
+  float pressure[send_cells];              /* fluid pressure in grid cell */
+  float u_x[send_cells];                   /* x-component of velocity in grid cell */
+  float u_y[send_cells];                   /* y-component of velocity in grid cell */
+  float tmp_pressure, tmp_u_x, tmp_u_y;
   
   MPI_Aint addr, base_addr;
   MPI_Aint displacements_final_state[4];
@@ -759,19 +761,19 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   MPI_Address(&u_x, &base_addr);
   displacements_final_state[0] = 0;
   types_final_state[0] = MPI_FLOAT;
-  block_lengths_final_state[0] = distribution;
+  block_lengths_final_state[0] = send_cells;
   MPI_Address(&u_y, &addr);
   displacements_final_state[1] = base_addr - addr;
   types_final_state[1] = MPI_FLOAT;
-  block_lengths_final_state[1] = distribution;
+  block_lengths_final_state[1] = send_cells;
   MPI_Address(&pressure, &addr);
   displacements_final_state[2] = base_addr - addr;
   types_final_state[2] = MPI_FLOAT;
-  block_lengths_final_state[2] = distribution;
+  block_lengths_final_state[2] = send_cells;
   MPI_Address(&obstacles, &addr);
   displacements_final_state[3] = base_addr - addr;
   types_final_state[3] = MPI_FLOAT;
-  block_lengths_final_state[3] = distribution;
+  block_lengths_final_state[3] = send_cells;
   MPI_Type_create_struct(4, block_lengths_final_state, displacements_final_state, types_final_state, &final_state_type);
   MPI_Type_commit(&final_state_type);
 
@@ -786,8 +788,8 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
     for(jj=0;jj<params.nx;jj++) {
       /* an occupied cell */
       if(obstacles[(ii - 1)*params.nx + jj]) {
-        u_x[(ii - 1)*params.nx + jj] = u_y[(ii - 1)*params.nx + jj] = 0.0;
-        pressure[(ii - 1)*params.nx + jj] = params.density * c_sq;
+        tmp_u_x = tmp_u_y = 0.0;
+        tmp_pressure = params.density * c_sq;
       }
       /* no obstacle */
       else {
@@ -796,7 +798,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
           local_density += cells[ii*params.nx + jj].speeds[kk];
         }
         /* compute x velocity component */
-        u_x[(ii - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[1] +
+        tmp_u_x = (cells[ii*params.nx + jj].speeds[1] +
                cells[ii*params.nx + jj].speeds[5] +
                cells[ii*params.nx + jj].speeds[8]
                - (cells[ii*params.nx + jj].speeds[3] +
@@ -804,7 +806,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
                   cells[ii*params.nx + jj].speeds[7]))
           / local_density;
         /* compute y velocity component */
-        u_y[(ii - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[2] +
+        tmp_u_y = (cells[ii*params.nx + jj].speeds[2] +
                cells[ii*params.nx + jj].speeds[5] +
                cells[ii*params.nx + jj].speeds[6]
                - (cells[ii*params.nx + jj].speeds[4] +
@@ -812,11 +814,15 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
                   cells[ii*params.nx + jj].speeds[8]))
           / local_density;
         /* compute pressure */
-        pressure[(ii - 1)*params.nx + jj] = local_density * c_sq;
+        tmp_pressure = local_density * c_sq;
       }
       /* write to file */
       if (rank == MASTER) {
           fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii,jj,u_x[(ii - 1)*params.nx + jj],u_y[(ii - 1)*params.nx + jj],pressure[(ii - 1)*params.nx + jj],obstacles[(ii - 1)*params.nx + jj]);
+      } else {
+          u_x[(ii - 1)*params.nx + jj] = tmp_u_x;
+          u_y[(ii - 1)*params.nx + jj] = tmp_u_y;
+          pressure[(ii - 1)*params.nx + jj] = tmp_pressure;
       }
     }
   }
@@ -824,9 +830,9 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
   if (rank == MASTER) {
       for (ii = 1; ii < size; ii++) {
           MPI_Recv(&u_x, 1, final_state_type, ii, 0, MPI_COMM_WORLD, &status);
-          for (jj = 0; jj < distribution; jj++) {
+          for (jj = 0; jj < send_cells; jj++) {
               if (jj % params.nx == 0) y_cnt++;
-              fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",y_cnt,jj,u_x[jj],u_y[jj],pressure[jj],obstacles[jj]);
+              fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",y_cnt,jj % params.nx,u_x[jj],u_y[jj],pressure[jj],obstacles[jj]);
           }
       }
   } else {
