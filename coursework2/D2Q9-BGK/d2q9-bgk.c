@@ -506,7 +506,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
           params->density = send_params.density;
           params->accel = send_params.accel;
           params->omega = send_params.omega;
-          *distribution = params->nx;
+          *distribution = params->ny;
       }
       MPI_Type_free(&params_type);
   }
@@ -742,40 +742,48 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
 {
   FILE* fp = NULL;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
-  int send_cells = distribution*params.nx;
+  int send_cells = distribution*params.nx;;
   int recv_cells = send_cells * (size - 1) + params.ny*params.nx;
   const float c_sq = 1.0/3.0;  /* sq. of speed of sound */
   float local_density;         /* per grid cell sum of densities */
-  float send_pressure[send_cells];              /* fluid pressure in grid cell */
-  float send_u_x[send_cells];                   /* x-component of velocity in grid cell */
-  float send_u_y[send_cells];                   /* y-component of velocity in grid cell */
+  float* send_pressure = NULL;              /* fluid pressure in grid cell */
+  float* send_u_x = NULL;                   /* x-component of velocity in grid cell */
+  float* send_u_y = NULL;                   /* y-component of velocity in grid cell */
   float* recv_pressure = NULL;              /* fluid pressure in grid cell */
   float* recv_u_x = NULL;                   /* x-component of velocity in grid cell */
   float* recv_u_y = NULL;                   /* y-component of velocity in grid cell */
   int* recv_obstacles = NULL;
   int* recv_cnts = NULL;
   int* recv_disp = NULL;
+
   if (rank == MASTER) {
-      recv_u_x = malloc(recv_cells * sizeof(float));
-      recv_u_y = malloc(recv_cells * sizeof(float));
-      recv_pressure = malloc(recv_cells * sizeof(float));
-      recv_obstacles = malloc(recv_cells * sizeof(int));
-      recv_cnts = malloc(size * sizeof(int));
-      recv_pressure = malloc(size * sizeof(int));
+      send_pressure = (float*) malloc(sizeof(float) * params.nx * params.ny);
+      send_u_x = (float*) malloc(sizeof(float) * params.nx * params.ny);
+      send_u_y = (float*) malloc(sizeof(float) * params.nx * params.ny);
+      recv_u_x = (float*) malloc(recv_cells * sizeof(float));
+      recv_u_y = (float*) malloc(recv_cells * sizeof(float));
+      recv_pressure = (float*) malloc(recv_cells * sizeof(float));
+      recv_obstacles = (int*) malloc(recv_cells * sizeof(int));
+      recv_cnts = (int*) malloc(size * sizeof(int));
+      recv_disp = (int*) malloc(size * sizeof(int));
       recv_cnts[0] = params.ny*params.nx;
       recv_disp[0] = 0;
       for (ii = 1; ii < size; ii++) {
           recv_cnts[ii] = send_cells;
           recv_disp[ii] = recv_disp[ii - 1] + send_cells;
       }
+  } else {
+      send_pressure = (float*) malloc(sizeof(float) * send_cells);
+      send_u_x = (float*) malloc(sizeof(float) * send_cells);
+      send_u_y = (float*) malloc(sizeof(float) * send_cells);
   }
 
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* an occupied cell */
       if(obstacles[(ii - 1)*params.nx + jj]) {
-        send_u_x[(ii - 1)*params.nx + jj] = send_u_y[(jj - 1)*params.nx + jj] = 0.0;
-        send_pressure[(jj - 1)*params.nx + jj] = params.density * c_sq;
+        send_u_x[(ii - 1)*params.nx + jj] = send_u_y[(ii - 1)*params.nx + jj] = 0.0;
+        send_pressure[(ii - 1)*params.nx + jj] = params.density * c_sq;
       }
       /* no obstacle */
       else {
@@ -784,7 +792,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
           local_density += cells[ii*params.nx + jj].speeds[kk];
         }
         /* compute x velocity component */
-        send_u_x[(jj - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[1] +
+        send_u_x[(ii - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[1] +
                cells[ii*params.nx + jj].speeds[5] +
                cells[ii*params.nx + jj].speeds[8]
                - (cells[ii*params.nx + jj].speeds[3] +
@@ -792,7 +800,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
                   cells[ii*params.nx + jj].speeds[7]))
           / local_density;
         /* compute y velocity component */
-        send_u_y[(jj - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[2] +
+        send_u_y[(ii - 1)*params.nx + jj] = (cells[ii*params.nx + jj].speeds[2] +
                cells[ii*params.nx + jj].speeds[5] +
                cells[ii*params.nx + jj].speeds[6]
                - (cells[ii*params.nx + jj].speeds[4] +
@@ -800,17 +808,18 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
                   cells[ii*params.nx + jj].speeds[8]))
           / local_density;
         /* compute pressure */
-        send_pressure[(jj - 1)*params.nx + jj] = local_density * c_sq;
+        send_pressure[(ii - 1)*params.nx + jj] = local_density * c_sq;
       }
     }
   }
-  
+
   MPI_Gatherv(send_u_x, send_cells, MPI_FLOAT, recv_u_x, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
   MPI_Gatherv(send_u_y, send_cells, MPI_FLOAT, recv_u_y, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
   MPI_Gatherv(send_pressure, send_cells, MPI_FLOAT, recv_pressure, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
   MPI_Gatherv(obstacles, send_cells, MPI_INT, recv_obstacles, recv_cnts, recv_disp, MPI_INT, MASTER, MPI_COMM_WORLD);
 
   if (rank == MASTER) {
+      fp = fopen(FINALSTATEFILE, "w");
       for (ii = 0; ii < recv_cells; ii++) {
           fprintf(fp,"%d %d %.12E %.12E %.12E %d\n",ii / params.nx,ii % params.nx,recv_u_x[ii],recv_u_y[ii],recv_pressure[ii],recv_obstacles[ii]);
       }
