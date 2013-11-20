@@ -13,7 +13,7 @@
 #! Second entry: Total amount of wall-clock time (true time). 
 #! 02:00:00 indicates 02 hours
 
-#PBS -l nodes=1:ppn=4,walltime=02:00:00
+#PBS -l nodes=4:ppn=4,walltime=02:00:00
 
 #! Mail to user if job aborts
 #PBS -m a

@@ -770,8 +770,14 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
       recv_disp[0] = 0;
       for (ii = 1; ii < size; ii++) {
           recv_cnts[ii] = send_cells;
-          recv_disp[ii] = recv_disp[ii - 1] + send_cells;
       }
+      if (size > 1) {
+          recv_disp[1] = params.nx * params.ny;
+          for (ii = 2; ii < size; ii++) {
+              recv_disp[ii] = recv_disp[ii - 1] + send_cells;
+          }
+      }
+      send_cells = params.nx * params.ny;
   } else {
       send_pressure = (float*) malloc(sizeof(float) * send_cells);
       send_u_x = (float*) malloc(sizeof(float) * send_cells);
@@ -812,7 +818,6 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
       }
     }
   }
-
   MPI_Gatherv(send_u_x, send_cells, MPI_FLOAT, recv_u_x, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
   MPI_Gatherv(send_u_y, send_cells, MPI_FLOAT, recv_u_y, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
   MPI_Gatherv(send_pressure, send_cells, MPI_FLOAT, recv_pressure, recv_cnts, recv_disp, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
