@@ -5,7 +5,7 @@ EXES=$(EXE1)
 
 CC=mpicc
 TAU=tau_cc.sh
-CFLAGS=-lm -Wall -O3
+CFLAGS=-lm -Wall -O3 -fopenmp
 
 all: $(EXES)
 
