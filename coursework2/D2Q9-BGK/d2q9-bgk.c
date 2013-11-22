@@ -96,8 +96,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
 */
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type);
 int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
-int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type);
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank);
+int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3);
+int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank, MPI_Request req0, MPI_Request req1, MPI_Request req2, MPI_Request req3);
 int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
 int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels, int size, int rank, int distribution);
 
@@ -216,9 +216,10 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
 {
+  MPI_Request req0, req1, req2, req3;
   accelerate_flow(params,cells,obstacles);
-  synchronise(params, cells, size, rank, cells_type);
-  propagate(params,cells,tmp_cells, size, rank);
+  synchronise(params, cells, size, rank, cells_type, &req0, &req1, &req2, &req3);
+  propagate(params,cells,tmp_cells, size, rank, req0, req1, req2, req3);
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
@@ -255,23 +256,42 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
   return EXIT_SUCCESS;
 }
 
-int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type)
+int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3)
 {
     int right = (rank + 1) % size;
     int left = (rank == MASTER) ? size - 1 : rank - 1;
     MPI_Status status;
     MPI_Sendrecv(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, cells, params.nx, cells_type, left, 0, MPI_COMM_WORLD, &status);
     MPI_Sendrecv(&(cells[params.nx]), params.nx, cells_type, left, 0, &(cells[(params.ny + 1)*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, &status);
+    if (rank % 2 == 0) {
+        MPI_Isend(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, req0);
+        MPI_Isend(&(cells[params.nx]), params.nx, cells_type, left, 0, MPI_COMM_WORLD, req1);
+        MPI_Irecv(cells, params.nx, cells_type, left, 0, MPI_COMM_WORLD, req2);
+        MPI_Irecv(&(cells[(params.ny + 1)*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, req3);
+    } else {
+        MPI_Irecv(cells, params.nx, cells_type, left, 0, MPI_COMM_WORLD, req2);
+        MPI_Irecv(&(cells[(params.ny + 1)*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, req3);
+        MPI_Isend(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, req0);
+        MPI_Isend(&(cells[params.nx]), params.nx, cells_type, left, 0, MPI_COMM_WORLD, req1);
+    }
     return EXIT_SUCCESS;
 }
 
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank)
+int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size, int rank, MPI_Request req0, MPI_Request req1, MPI_Request req2, MPI_Request req3)
 {
   int ii,jj;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
+  MPI_Status status;
 
   /* loop over _all_ cells */
   for(ii=1;ii<=params.ny;ii++) {
+    if (ii == 0) {
+        MPI_Wait(&req1, &status);
+        MPI_Wait(&req2, &status);
+    } else if (ii == params.ny) {
+        MPI_Wait(&req0, &status);
+        MPI_Wait(&req3, &status);
+    }
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
