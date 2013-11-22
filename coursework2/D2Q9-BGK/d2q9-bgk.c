@@ -279,16 +279,13 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
   int ii,jj;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
   MPI_Status status;
+  MPI_Wait(req1, &status);
+  MPI_Wait(req2, &status);
+  MPI_Wait(req0, &status);
+  MPI_Wait(req3, &status);
 
   /* loop over _all_ cells */
   for(ii=1;ii<=params.ny;ii++) {
-    if (ii == 1) {
-        MPI_Wait(req1, &status);
-        MPI_Wait(req2, &status);
-    } else if (ii == params.ny) {
-        MPI_Wait(req0, &status);
-        MPI_Wait(req3, &status);
-    }
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
       ** respecting periodic boundary conditions (wrap around) */
