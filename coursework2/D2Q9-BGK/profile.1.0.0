@@ -1,0 +1,31 @@
+24 templated_functions_MULTI_TIME
+# Name Calls Subrs Excl Incl ProfileCalls # <metadata><attribute><name>Metric Name</name><value>TIME</value></attribute><attribute><name>Starting Timestamp</name><value>1385116244530070</value></attribute><attribute><name>Timestamp</name><value>1385116244530262</value></attribute><attribute><name>pid</name><value>18589</value></attribute></metadata>
+"int main(int, char **) C [{d2q9-bgk.c} {126,1}-{215,1}]  " 1 20011 30775 10468088 0 GROUP="TAU_DEFAULT" 
+"MPI_Init()  " 1 0 1123635 1123635 0 GROUP="MPI" 
+"MPI_Comm_size()  " 1 0 2 2 0 GROUP="MPI" 
+"MPI_Comm_rank()  " 1 0 1 1 0 GROUP="MPI" 
+"int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C [{d2q9-bgk.c} {407,1}-{652,1}]  " 1 18 403 227209 0 GROUP="TAU_USER" 
+"MPI_Address()  " 10 0 16 16 0 GROUP="MPI" 
+"MPI_Type_create_struct()" 3 0 78 78 0 GROUP="MPI" 
+"MPI_Type_commit()  " 3 0 18 18 0 GROUP="MPI" 
+"MPI_Bcast()  " 1 0 133718 133718 0 GROUP="MPI" 
+"MPI_Type_free()  " 3 0 20 20 0 GROUP="MPI" 
+"MPI_Recv()  " 1 0 92966 92966 0 GROUP="MPI" 
+"int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C [{d2q9-bgk.c} {217,1}-{224,1}]  " 10000 40000 76137 8407717 0 GROUP="TAU_USER" 
+"int accelerate_flow(const t_param, t_speed *, int *) C [{d2q9-bgk.c} {226,1}-{256,1}]  " 10000 0 15331 15331 0 GROUP="TAU_USER" 
+"int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C [{d2q9-bgk.c} {258,1}-{266,1}]  " 10000 20000 58309 3756658 0 GROUP="TAU_USER" 
+"MPI_Sendrecv()  " 20000 0 3698349 3698349 0 GROUP="MPI" 
+"int propagate(const t_param, t_speed *, t_speed *, int, int) C [{d2q9-bgk.c} {268,1}-{299,1}]  " 10000 0 889609 889609 0 GROUP="TAU_USER" 
+"int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C [{d2q9-bgk.c} {301,1}-{405,1}]  " 10000 0 3669982 3669982 0 GROUP="TAU_USER" 
+"float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C [{d2q9-bgk.c} {675,1}-{715,1}]  " 10001 20002 448221 511277 0 GROUP="TAU_USER" 
+"MPI_Reduce()  " 20002 0 63056 63056 0 GROUP="MPI" 
+"float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C [{d2q9-bgk.c} {717,1}-{722,1}]  " 1 1 2 58 0 GROUP="TAU_USER" 
+"int write_values(const t_param, t_speed *, int *, float *, int, int, int) C [{d2q9-bgk.c} {741,1}-{844,1}]  " 1 4 113 2494 0 GROUP="TAU_USER" 
+"MPI_Gatherv()  " 4 0 2381 2381 0 GROUP="MPI" 
+"int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C [{d2q9-bgk.c} {654,1}-{673,1}]  " 1 0 3 3 0 GROUP="TAU_USER" 
+"MPI_Finalize()  " 1 0 164963 164963 0 GROUP="MPI" 
+0 aggregates
+2 userevents
+# eventname numevents max min mean sumsqr
+"Message size for broadcast" 1 28 28 28 784
+"Message size for reduce" 20002 4 4 4 320032

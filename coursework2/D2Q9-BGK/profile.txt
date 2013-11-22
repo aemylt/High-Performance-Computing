@@ -1,0 +1,703 @@
+Reading Profile files in profile.*
+
+NODE 0;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           28       10,506           1       20011   10506656 int main(int, char **) C 
+ 73.8           80        7,749       10000       40000        775 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 55.3        5,806        5,806       10000           0        581 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 14.0        1,473        1,473       10000           0        147 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+ 10.9        1,144        1,144           1           0    1144873 MPI_Init() 
+ 10.8          664        1,131       10001       20002        113 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  4.4          466          466       20002           0         23 MPI_Reduce() 
+  3.5           58          372       10000       20000         37 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  3.0          314          314       20000           0         16 MPI_Sendrecv() 
+  2.5           78          265           1         393     265968 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.5          150          152           1           4     152867 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  1.1          117          117         376           0        313 MPI_Send() 
+  0.7           69           69           1           0      69299 MPI_Bcast() 
+  0.3           33           33           1           0      33165 MPI_Finalize() 
+  0.2           16           16       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0            2            2           4           0        602 MPI_Gatherv() 
+  0.0        0.003        0.093           1           1         93 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.045        0.045           3           0         15 MPI_Type_create_struct()
+  0.0        0.027        0.027           3           0          9 MPI_Type_free() 
+  0.0        0.021        0.021           3           0          7 MPI_Type_commit() 
+  0.0        0.016        0.016          10           0          2 MPI_Address() 
+  0.0        0.004        0.004           1           0          4 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 0, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         4    2.4E+05    2.4E+05    2.4E+05          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 1;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           30       10,468           1       20011   10468088 int main(int, char **) C 
+ 80.3           76        8,407       10000       40000        841 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.9           58        3,756       10000       20000        376 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.3        3,698        3,698       20000           0        185 MPI_Sendrecv() 
+ 35.1        3,669        3,669       10000           0        367 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.7        1,123        1,123           1           0    1123635 MPI_Init() 
+  8.5          889          889       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.9          448          511       10001       20002         51 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.2        0.403          227           1          18     227209 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          164          164           1           0     164963 MPI_Finalize() 
+  1.3          133          133           1           0     133718 MPI_Bcast() 
+  0.9           92           92           1           0      92966 MPI_Recv() 
+  0.6           63           63       20002           0          3 MPI_Reduce() 
+  0.1           15           15       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.113            2           1           4       2494 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        595 MPI_Gatherv() 
+  0.0        0.078        0.078           3           0         26 MPI_Type_create_struct()
+  0.0        0.002        0.058           1           1         58 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0         0.02         0.02           3           0          7 MPI_Type_free() 
+  0.0        0.018        0.018           3           0          6 MPI_Type_commit() 
+  0.0        0.016        0.016          10           0          2 MPI_Address() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 1, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 2;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           31       10,462           1       20011   10462402 int main(int, char **) C 
+ 80.3           79        8,397       10000       40000        840 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.9           49        3,751       10000       20000        375 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.4        3,702        3,702       20000           0        185 MPI_Sendrecv() 
+ 35.0        3,660        3,660       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.7        1,120        1,120           1           0    1120404 MPI_Init() 
+  8.5          886          886       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  5.0          432          520       10001       20002         52 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.2        0.318          225           1          18     225259 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          164          164           1           0     164527 MPI_Finalize() 
+  1.3          131          131           1           0     131014 MPI_Bcast() 
+  0.9           93           93           1           0      93848 MPI_Recv() 
+  0.8           88           88       20002           0          4 MPI_Reduce() 
+  0.2           19           19       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.116            2           1           4       2502 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        596 MPI_Gatherv() 
+  0.0        0.004        0.069           1           1         69 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.034        0.034           3           0         11 MPI_Type_create_struct()
+  0.0        0.024        0.024           3           0          8 MPI_Type_free() 
+  0.0        0.016        0.016           3           0          5 MPI_Type_commit() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 2, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 3;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           30       10,474           1       20011   10474028 int main(int, char **) C 
+ 80.5           69        8,429       10000       40000        843 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 36.3           42        3,803       10000       20000        380 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.9        3,761        3,761       20000           0        188 MPI_Sendrecv() 
+ 34.9        3,655        3,655       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.8        1,131        1,131           1           0    1131676 MPI_Init() 
+  8.5          885          885       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.7          430          489       10001       20002         49 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.1        0.263          220           1          18     220587 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          169          169           1           0     169479 MPI_Finalize() 
+  1.1          113          113           1           0     113595 MPI_Bcast() 
+  1.0          106          106           1           0     106653 MPI_Recv() 
+  0.6           59           59       20002           0          3 MPI_Reduce() 
+  0.1           15           15       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.105            2           1           4       2526 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        605 MPI_Gatherv() 
+  0.0        0.005        0.064           1           1         64 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.032        0.032           3           0         11 MPI_Type_create_struct()
+  0.0        0.024        0.024           3           0          8 MPI_Type_free() 
+  0.0        0.019        0.019           3           0          6 MPI_Type_commit() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 3, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 4;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           54       10,475           1       20011   10475494 int main(int, char **) C 
+ 49.3          121        5,159       10000       40000        516 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.7          468        3,735       10001       20002        374 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 34.9        3,655        3,655       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 31.2        3,267        3,267       20002           0        163 MPI_Reduce() 
+ 10.8        1,126        1,126           1           0    1126696 MPI_Init() 
+  8.5          892          892       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.3           65          453       10000       20000         45 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  3.7          388          388       20000           0         19 MPI_Sendrecv() 
+  2.2        0.308          227           1          26     227471 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          169          169           1           0     169017 MPI_Finalize() 
+  1.6          163          163           1           0     163105 MPI_Bcast() 
+  0.6           63           63           9           0       7109 MPI_Recv() 
+  0.3           36           36       10000           0          4 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.129            2           1           4       2530 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        600 MPI_Gatherv() 
+  0.0        0.004         0.06           1           1         60 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.033        0.033           3           0         11 MPI_Type_create_struct()
+  0.0        0.025        0.025           3           0          8 MPI_Type_free() 
+  0.0         0.02         0.02          10           0          2 MPI_Address() 
+  0.0        0.016        0.016           3           0          5 MPI_Type_commit() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_rank() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 4, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 5;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           36       10,477           1       20011   10477113 int main(int, char **) C 
+ 80.2          106        8,404       10000       40000        840 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.6           67        3,727       10000       20000        373 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 34.9        3,660        3,660       20000           0        183 MPI_Sendrecv() 
+ 34.9        3,655        3,655       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.8        1,131        1,131           1           0    1131362 MPI_Init() 
+  8.6          898          898       10000           0         90 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.9          436          508       10001       20002         51 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.2        0.319          227           1          30     227486 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.9          199          199           1           0     199855 MPI_Bcast() 
+  1.6          165          165           1           0     165909 MPI_Finalize() 
+  0.7           72           72       20002           0          4 MPI_Reduce() 
+  0.3           27           27          13           0       2095 MPI_Recv() 
+  0.2           16           16       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.111            2           1           4       2591 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        620 MPI_Gatherv() 
+  0.0        0.007        0.055           1           1         55 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.033        0.033           3           0         11 MPI_Type_create_struct()
+  0.0        0.023        0.023           3           0          8 MPI_Type_free() 
+  0.0        0.018        0.018          10           0          2 MPI_Address() 
+  0.0        0.015        0.015           3           0          5 MPI_Type_commit() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_rank() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 5, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 6;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           53       10,476           1       20011   10476047 int main(int, char **) C 
+ 50.0          147        5,233       10000       40000        523 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.0          460        3,662       10001       20002        366 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 34.9        3,661        3,661       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 30.6        3,202        3,202       20002           0        160 MPI_Reduce() 
+ 10.9        1,141        1,141           1           0    1141689 MPI_Init() 
+  8.5          893          893       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.8           75          499       10000       20000         50 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  4.0          424          424       20000           0         21 MPI_Sendrecv() 
+  2.0        0.281          210           1          30     210752 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          171          171           1           0     171261 MPI_Finalize() 
+  1.4          148          148           1           0     148340 MPI_Bcast() 
+  0.6           62           62          13           0       4774 MPI_Recv() 
+  0.3           31           31       10000           0          3 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.114            2           1           4       2582 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        617 MPI_Gatherv() 
+  0.0        0.003        0.065           1           1         65 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.032        0.032           3           0         11 MPI_Type_create_struct()
+  0.0        0.025        0.025           3           0          8 MPI_Type_free() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.015        0.015           3           0          5 MPI_Type_commit() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_rank() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 6, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 7;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           36       10,482           1       20011   10482737 int main(int, char **) C 
+ 80.0          108        8,385       10000       40000        839 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.4           68        3,708       10000       20000        371 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 34.8        3,647        3,647       10000           0        365 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 34.7        3,639        3,639       20000           0        182 MPI_Sendrecv() 
+ 10.9        1,138        1,138           1           0    1138143 MPI_Init() 
+  8.5          889          889       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  5.0          452          527       10001       20002         53 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.1        0.319          223           1          30     223405 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          168          168           1           0     168813 MPI_Finalize() 
+  1.3          140          140           1           0     140723 MPI_Bcast() 
+  0.8           82           82          13           0       6330 MPI_Recv() 
+  0.7           74           74       20002           0          4 MPI_Reduce() 
+  0.3           31           31       10000           0          3 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.113            2           1           4       2629 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        629 MPI_Gatherv() 
+  0.0        0.004         0.06           1           1         60 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.031        0.031           3           0         10 MPI_Type_create_struct()
+  0.0        0.024        0.024           3           0          8 MPI_Type_free() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.013        0.013           3           0          4 MPI_Type_commit() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 7, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 8;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           31       10,472           1       20011   10472223 int main(int, char **) C 
+ 48.1           86        5,040       10000       40000        504 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 37.0          437        3,877       10001       20002        388 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.0        3,660        3,660       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 32.8        3,439        3,439       20002           0        172 MPI_Reduce() 
+ 10.7        1,124        1,124           1           0    1124742 MPI_Init() 
+  8.5          893          893       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  3.7           57          385       10000       20000         39 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  3.1          327          327       20000           0         16 MPI_Sendrecv() 
+  2.2        0.395          226           1          30     226874 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          168          168           1           0     168191 MPI_Finalize() 
+  1.2          130          130           1           0     130618 MPI_Bcast() 
+  0.9           95           95          13           0       7368 MPI_Recv() 
+  0.1           15           15       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.122            2           1           4       2605 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        621 MPI_Gatherv() 
+  0.0        0.003        0.062           1           1         62 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0         0.03         0.03           3           0         10 MPI_Type_create_struct()
+  0.0        0.028        0.028           3           0          9 MPI_Type_free() 
+  0.0        0.017        0.017           3           0          6 MPI_Type_commit() 
+  0.0        0.014        0.014          10           0          1 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_size() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 8, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 9;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           31       10,478           1       20011   10478472 int main(int, char **) C 
+ 80.3           91        8,418       10000       40000        842 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.9           60        3,765       10000       20000        377 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.4        3,705        3,705       20000           0        185 MPI_Sendrecv() 
+ 34.9        3,655        3,655       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 11.0        1,150        1,150           1           0    1150150 MPI_Init() 
+  8.5          889          889       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.8          435          499       10001       20002         50 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.0        0.278          205           1          23     205893 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          170          170           1           0     170024 MPI_Finalize() 
+  1.0          103          103           1           0     103124 MPI_Bcast() 
+  1.0          102          102           6           0      17067 MPI_Recv() 
+  0.6           64           64       20002           0          3 MPI_Reduce() 
+  0.2           16           16       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.099            2           1           4       2691 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        648 MPI_Gatherv() 
+  0.0        0.004        0.051           1           1         51 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.038        0.038           3           0         13 MPI_Type_create_struct()
+  0.0        0.029        0.029           3           0         10 MPI_Type_free() 
+  0.0        0.021        0.021           3           0          7 MPI_Type_commit() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 9, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 10;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           36       10,490           1       20011   10490657 int main(int, char **) C 
+ 76.8           73        8,055       10000       40000        806 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 34.9        3,659        3,659       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 32.6           48        3,416       10000       20000        342 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 32.1        3,367        3,367       20000           0        168 MPI_Sendrecv() 
+ 10.9        1,143        1,143           1           0    1143684 MPI_Init() 
+  8.5          889          889       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  8.1          450          849       10001       20002         85 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  3.8          399          399       20002           0         20 MPI_Reduce() 
+  2.2        0.321          234           1          18     234442 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          168          168           1           0     168789 MPI_Finalize() 
+  1.3          131          131           1           0     131489 MPI_Bcast() 
+  1.0          102          102           1           0     102562 MPI_Recv() 
+  0.2           17           17       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.115            2           1           4       2660 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        636 MPI_Gatherv() 
+  0.0        0.004        0.066           1           1         66 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.032        0.032           3           0         11 MPI_Type_create_struct()
+  0.0        0.023        0.023           3           0          8 MPI_Type_free() 
+  0.0        0.016        0.016          10           0          2 MPI_Address() 
+  0.0        0.012        0.012           3           0          4 MPI_Type_commit() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 10, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 11;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           30       10,462           1       20011   10462680 int main(int, char **) C 
+ 80.2           80        8,395       10000       40000        840 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.9           58        3,751       10000       20000        375 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.3        3,692        3,692       20000           0        185 MPI_Sendrecv() 
+ 34.9        3,654        3,654       10000           0        365 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.8        1,127        1,127           1           0    1127155 MPI_Init() 
+  8.5          888          888       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.9          443          508       10001       20002         51 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.1        0.321          224           1          18     224774 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.7          174          174           1           0     174007 MPI_Finalize() 
+  1.2          122          122           1           0     122253 MPI_Recv() 
+  1.0          102          102           1           0     102103 MPI_Bcast() 
+  0.6           64           64       20002           0          3 MPI_Reduce() 
+  0.2           20           20       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.114            2           1           4       2716 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        650 MPI_Gatherv() 
+  0.0        0.005         0.06           1           1         60 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.038        0.038           3           0         13 MPI_Type_create_struct()
+  0.0        0.036        0.036           3           0         12 MPI_Type_free() 
+  0.0        0.019        0.019           3           0          6 MPI_Type_commit() 
+  0.0        0.015        0.015          10           0          2 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 11, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 12;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           52       10,476           1       20011   10476452 int main(int, char **) C 
+ 49.0          123        5,128       10000       40000        513 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.7          472        3,739       10001       20002        374 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 34.9        3,655        3,655       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 31.2        3,267        3,267       20002           0        163 MPI_Reduce() 
+ 11.0        1,156        1,156           1           0    1156803 MPI_Init() 
+  8.5          890          890       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.1           66          430       10000       20000         43 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  3.5          363          363       20000           0         18 MPI_Sendrecv() 
+  2.1        0.247          223           1          18     223349 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          172          172           1           0     172861 MPI_Finalize() 
+  1.2          129          129           1           0     129946 MPI_Bcast() 
+  0.9           93           93           1           0      93069 MPI_Recv() 
+  0.3           28           28       10000           0          3 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.119            2           1           4       2724 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        651 MPI_Gatherv() 
+  0.0        0.003        0.057           1           1         57 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.035        0.035           3           0         12 MPI_Type_create_struct()
+  0.0        0.028        0.028           3           0          9 MPI_Type_free() 
+  0.0        0.025        0.025           3           0          8 MPI_Type_commit() 
+  0.0        0.014        0.014          10           0          1 MPI_Address() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 12, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 13;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           35       10,474           1       20011   10474286 int main(int, char **) C 
+ 80.0           99        8,379       10000       40000        838 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.3           70        3,702       10000       20000        370 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 35.0        3,663        3,663       10000           0        366 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 34.7        3,631        3,631       20000           0        182 MPI_Sendrecv() 
+ 10.9        1,146        1,146           1           0    1146174 MPI_Init() 
+  8.6          899          899       10000           0         90 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.8          433          499       10001       20002         50 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.3        0.264          242           1          18     242747 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.7          180          180           1           0     180219 MPI_Bcast() 
+  1.6          167          167           1           0     167767 MPI_Finalize() 
+  0.6           65           65       20002           0          3 MPI_Reduce() 
+  0.6           62           62           1           0      62190 MPI_Recv() 
+  0.1           15           15       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.107            2           1           4       2782 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        669 MPI_Gatherv() 
+  0.0        0.004        0.054           1           1         54 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.031        0.031           3           0         10 MPI_Type_create_struct()
+  0.0        0.023        0.023           3           0          8 MPI_Type_free() 
+  0.0        0.016        0.016           3           0          5 MPI_Type_commit() 
+  0.0        0.014        0.014          10           0          1 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 MPI_Comm_rank() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 13, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 14;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           52       10,475           1       20011   10475139 int main(int, char **) C 
+ 52.5          148        5,497       10000       40000        550 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 35.1        3,672        3,672       10000           0        367 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 32.1          465        3,359       10001       20002        336 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 27.6        2,894        2,894       20002           0        145 MPI_Reduce() 
+ 10.8        1,127        1,127           1           0    1127529 MPI_Init() 
+  8.5          894          894       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  7.1           78          747       10000       20000         75 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+  6.4          668          668       20000           0         33 MPI_Sendrecv() 
+  2.6        0.301          267           1          18     267491 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          167          167           1           0     167752 MPI_Finalize() 
+  1.6          164          164           1           0     164876 MPI_Bcast() 
+  1.0          102          102           1           0     102241 MPI_Recv() 
+  0.3           33           33       10000           0          3 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.107            2           1           4       2777 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        668 MPI_Gatherv() 
+  0.0        0.003        0.067           1           1         67 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.063        0.063           3           0         21 MPI_Type_create_struct()
+  0.0        0.021        0.021           3           0          7 MPI_Type_free() 
+  0.0        0.018        0.018           3           0          6 MPI_Type_commit() 
+  0.0        0.014        0.014          10           0          1 MPI_Address() 
+  0.0        0.002        0.002           1           0          2 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 14, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+NODE 15;CONTEXT 0;THREAD 0:
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           35       10,478           1       20011   10478043 int main(int, char **) C 
+ 80.0          102        8,384       10000       40000        838 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 38.0           68        3,978       10000       20000        398 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 37.3        3,909        3,909       20000           0        195 MPI_Sendrecv() 
+ 32.3        3,380        3,380       10000           0        338 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 10.8        1,129        1,129           1           0    1129524 MPI_Init() 
+  8.5          890          890       10000           0         89 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  4.7          423          488       10001       20002         49 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  2.5        0.888          265           1         318     265771 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.6          170          170           1           0     170373 MPI_Finalize() 
+  1.4          142          142           1           0     142939 MPI_Bcast() 
+  1.2          121          121         301           0        405 MPI_Recv() 
+  0.6           65           65       20002           0          3 MPI_Reduce() 
+  0.3           33           33       10000           0          3 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.0        0.102            2           1           4       2829 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.0            2            2           4           0        682 MPI_Gatherv() 
+  0.0        0.006        0.058           1           1         58 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.037        0.037           3           0         12 MPI_Type_create_struct()
+  0.0         0.03         0.03           3           0         10 MPI_Type_free() 
+  0.0        0.021        0.021           3           0          7 MPI_Type_commit() 
+  0.0        0.013        0.013          10           0          1 MPI_Address() 
+  0.0        0.003        0.003           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_rank() 
+  0.0        0.001        0.001           1           0          1 MPI_Comm_size() 
+---------------------------------------------------------------------------------------
+
+USER EVENTS Profile :NODE 15, CONTEXT 0, THREAD 0
+---------------------------------------------------------------------------------------
+NumSamples   MaxValue   MinValue  MeanValue  Std. Dev.  Event Name
+---------------------------------------------------------------------------------------
+         1         28         28         28          0  Message size for broadcast
+         0          0          0          0          0  Message size for gather
+     2E+04          4          4          4          0  Message size for reduce
+---------------------------------------------------------------------------------------
+
+FUNCTION SUMMARY (total):
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0          608     2:47.630          16      320176   10476907 int main(int, char **) C 
+ 70.1        1,594     1:57.468      160000      640000        734 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 36.0     1:00.412     1:00.412      160000           0        378 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 24.0          994       40,251      160000      320000        252 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 23.4       39,256       39,256      320000           0        123 MPI_Sendrecv() 
+ 14.9        7,355       24,909      160016      320032        156 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 10.8       18,164       18,164          16           0    1135265 MPI_Init() 
+ 10.5       17,554       17,554      320032           0         55 MPI_Reduce() 
+  8.9       14,846       14,846      160000           0         93 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  2.2           84        3,719          16        1024     232467 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.5        2,566        2,566          16           0     160431 MPI_Finalize() 
+  1.3        2,184        2,184          16           0     136560 MPI_Bcast() 
+  0.8        1,331        1,331         376           0       3541 MPI_Recv() 
+  0.2          363          363      160000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.1          152          192          16          64      12032 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.1          117          117         376           0        313 MPI_Send() 
+  0.0           40           40          64           0        631 MPI_Gatherv() 
+  0.0        0.064        0.999          16          16         62 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0        0.622        0.622          48           0         13 MPI_Type_create_struct()
+  0.0         0.41         0.41          48           0          9 MPI_Type_free() 
+  0.0        0.282        0.282          48           0          6 MPI_Type_commit() 
+  0.0        0.245        0.245         160           0          2 MPI_Address() 
+  0.0        0.042        0.042          16           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0        0.023        0.023          16           0          1 MPI_Comm_size() 
+  0.0        0.021        0.021          16           0          1 MPI_Comm_rank() 
+
+FUNCTION SUMMARY (mean):
+---------------------------------------------------------------------------------------
+%Time    Exclusive    Inclusive       #Call      #Subrs  Inclusive Name
+              msec   total msec                          usec/call 
+---------------------------------------------------------------------------------------
+100.0           38       10,476           1       20011   10476907 int main(int, char **) C 
+ 70.1           99        7,341       10000       40000        734 int timestep(const t_param, t_speed *, t_speed *, int *, int, int, MPI_Datatype) C 
+ 36.0        3,775        3,775       10000           0        378 int rebound_or_collision(const t_param, t_speed *, t_speed *, int *) C 
+ 24.0           62        2,515       10000       20000        252 int synchronise(const t_param, t_speed *, int, int, MPI_Datatype) C 
+ 23.4        2,453        2,453       20000           0        123 MPI_Sendrecv() 
+ 14.9          459        1,556       10001       20002        156 float av_velocity(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+ 10.8        1,135        1,135           1           0    1135265 MPI_Init() 
+ 10.5        1,097        1,097       20002           0         55 MPI_Reduce() 
+  8.9          927          927       10000           0         93 int propagate(const t_param, t_speed *, t_speed *, int, int) C 
+  2.2            5          232           1          64     232467 int initialise(const char *, const char *, t_param *, t_speed **, t_speed **, int **, float **, int, int, int *) C 
+  1.5          160          160           1           0     160431 MPI_Finalize() 
+  1.3          136          136           1           0     136560 MPI_Bcast() 
+  0.8           83           83        23.5           0       3541 MPI_Recv() 
+  0.2           22           22       10000           0          2 int accelerate_flow(const t_param, t_speed *, int *) C 
+  0.1            9           12           1           4      12032 int write_values(const t_param, t_speed *, int *, float *, int, int, int) C 
+  0.1            7            7        23.5           0        313 MPI_Send() 
+  0.0            2            2           4           0        631 MPI_Gatherv() 
+  0.0        0.004       0.0624           1           1         62 float calc_reynolds(const t_param, t_speed *, int *, int, int, MPI_Datatype) C 
+  0.0       0.0389       0.0389           3           0         13 MPI_Type_create_struct()
+  0.0       0.0256       0.0256           3           0          9 MPI_Type_free() 
+  0.0       0.0176       0.0176           3           0          6 MPI_Type_commit() 
+  0.0       0.0153       0.0153          10           0          2 MPI_Address() 
+  0.0      0.00263      0.00263           1           0          3 int finalise(const t_param *, t_speed **, t_speed **, int **, float **) C 
+  0.0      0.00144      0.00144           1           0          1 MPI_Comm_size() 
+  0.0      0.00131      0.00131           1           0          1 MPI_Comm_rank() 
