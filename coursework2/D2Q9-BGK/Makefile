@@ -4,6 +4,7 @@ EXE1=d2q9-bgk.exe
 EXES=$(EXE1)
 
 CC=mpicc
+TAU=tau_cc.sh
 CFLAGS=-lm -Wall -O3
 
 all: $(EXES)

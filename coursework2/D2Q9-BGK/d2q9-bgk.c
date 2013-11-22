@@ -282,7 +282,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
 
   /* loop over _all_ cells */
   for(ii=1;ii<=params.ny;ii++) {
-    if (ii == 0) {
+    if (ii == 1) {
         MPI_Wait(req1, &status);
         MPI_Wait(req2, &status);
     } else if (ii == params.ny) {
