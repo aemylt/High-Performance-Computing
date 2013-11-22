@@ -260,9 +260,6 @@ int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Da
 {
     int right = (rank + 1) % size;
     int left = (rank == MASTER) ? size - 1 : rank - 1;
-    MPI_Status status;
-    MPI_Sendrecv(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, cells, params.nx, cells_type, left, 0, MPI_COMM_WORLD, &status);
-    MPI_Sendrecv(&(cells[params.nx]), params.nx, cells_type, left, 0, &(cells[(params.ny + 1)*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, &status);
     if (rank % 2 == 0) {
         MPI_Isend(&(cells[params.ny*params.nx]), params.nx, cells_type, right, 0, MPI_COMM_WORLD, req0);
         MPI_Isend(&(cells[params.nx]), params.nx, cells_type, left, 0, MPI_COMM_WORLD, req1);
