@@ -22,7 +22,7 @@
 application="./d2q9-bgk.exe"
 
 #! Run options for the application
-options="input_30x20.params obstacles_30x20.dat"
+options="input_300x200.params obstacles_300x200.dat"
 
 ###############################################################
 ### You should not have to change anything below this line ####
@@ -40,11 +40,13 @@ echo This jobs runs on the following machines:
 echo `cat $PBS_NODEFILE | uniq`
  
 #! Create a machine file for MPI
-cat $PBS_NODEFILE > machine.file.$PBS_JOBID
+cat $PBS_NODEFILE | uniq > machine.file.$PBS_JOBID
  
-numnodes=`wc $PBS_NODEFILE | awk '{ print $1 }'`
-
-export OMP_NUM_THREADS=$numnodes
+numnodes=`wc -l machine.file.$PBS_JOBID | awk '{ print $1 }'`
+numthreads=2
+procspernode=4
+numprocs=$((($numnodes*$procspernode)/$numthreads))
+export OMP_NUM_THREADS=$numthreads
 
 #! Run the executable
-mpirun -np $numnodes -machinefile machine.file.$PBS_JOBID $application $options
+mpirun -np $numprocs -machinefile machine.file.$PBS_JOBID --cpus-per-proc $numthreads -x OMP_NUM_THREADS $application $options
