@@ -285,6 +285,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, int size
   MPI_Wait(req3, &status);
 
   /* loop over _all_ cells */
+#pragma omp parallel for shared(tmp_cells) private(jj, x_e, x_w, y_n, y_s) firstprivate(cells)
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* determine indices of axis-direction neighbours
@@ -329,6 +330,7 @@ int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cell
   ** NB the collision step is called after
   ** the propagate step and so values of interest
   ** are in the scratch-space grid */
+#pragma omp parallel for shared(cells) firstprivate(tmp_cells, obstacles) private(jj, kk, u_x, u_y, u, d_equ, u_sq, local_density)
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* if the cell contains an obstacle */
@@ -564,6 +566,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   w1 = params->density      /9.0;
   w2 = params->density      /36.0;
 
+#pragma omp parallel for shared(cells_ptr) private(jj) firstprivate(params, w0, w1, w2)
   for(ii=1;ii<=params->ny;ii++) {
     for(jj=0;jj<params->nx;jj++) {
       /* centre */
@@ -582,6 +585,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   }
 
   /* first set all cells in obstacle array to zero */ 
+#pragma omp parallel for shared(obstacles_ptr) private(jj) firstprivate(params)
   for(ii=0;ii<params->ny;ii++) {
     for(jj=0;jj<params->nx;jj++) {
       (*obstacles_ptr)[ii*params->nx + jj] = 0;
@@ -697,6 +701,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
   tmp_u_x = 0.0;
 
   /* loop over all non-blocked cells */
+#pragma omp parallel for reduction(+:tmp_u_x, tmp_cells) firstprivate(cells, obstacles) private(jj, kk, local_density)
   for(ii=1;ii<=params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       /* ignore occupied cells */
