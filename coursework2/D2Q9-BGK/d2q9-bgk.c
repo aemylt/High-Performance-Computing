@@ -789,12 +789,7 @@ int write_values(const t_param params, t_speed* cells, int* obstacles, float* av
       recv_disp[0] = 0;
       for (ii = 1; ii < size; ii++) {
           recv_cnts[ii] = send_cells;
-      }
-      if (size > 1) {
-          recv_disp[1] = params.nx * params.ny;
-          for (ii = 2; ii < size; ii++) {
-              recv_disp[ii] = recv_disp[ii - 1] + send_cells;
-          }
+          recv_disp[ii] = recv_disp[ii - 1] + recv_cnts[ii - 1];
       }
       send_cells = params.nx * params.ny;
   } else {
