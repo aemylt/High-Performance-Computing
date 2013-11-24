@@ -515,11 +515,11 @@ int initialise(const char* paramfile, const char* obstaclefile,
       if (rank == MASTER) {
           remainder = params->ny % size;
           if (remainder != 0) {
-              params->ny = distribution + 1;
+              params->ny = *distribution + 1;
               send_params.ny = params->ny;
           }
-          for (ii = 0; ii < size; ii++) {
-              if (ii == remainder) send_params.ny = send_params.ny - 1;
+          for (ii = 1; ii < size; ii++) {
+              if (ii == remainder) send_params.ny--;
               MPI_Send(&send_params, 1, params_type, ii, 0, MPI_COMM_WORLD);
           }
       } else {
@@ -639,8 +639,14 @@ int initialise(const char* paramfile, const char* obstaclefile,
           if ( blocked != 1 ) 
               die("obstacle blocked value should be 1",__LINE__,__FILE__);
           if (yy > params->ny - 1) {
-              int dest = (yy - remainder) / (*distribution);
-              yy = (yy - remainder) % (*distribution);
+              int dest;
+              if (remainder == 0 || yy < remainder * params->ny) {
+                  dest = yy / params->ny;
+                  yy = yy % params->ny;
+              } else {
+                  dest = (yy - remainder * params->ny)/(params->ny - 1) + remainder;
+                  yy = (yy - remainder * params->ny) % (params->ny - 1);
+              }
               MPI_Send(&xx, 1, obstacles_type, dest, 0, MPI_COMM_WORLD);
           } else {
               if ( yy<0 )
