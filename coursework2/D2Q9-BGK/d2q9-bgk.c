@@ -696,6 +696,7 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
   int    tot_cells, tmp_cells = 0;  /* no. of cells used in calculation */
   float local_density;  /* total density in cell */
   float tot_u_x, tmp_u_x;        /* accumulated x-components of velocity */
+  MPI_Status status;
 
   /* initialise */
   tmp_u_x = 0.0;
@@ -724,11 +725,19 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
       }
     }
   }
-  MPI_Reduce(&tmp_u_x, &tot_u_x, 1, MPI_FLOAT, MPI_SUM, MASTER, MPI_COMM_WORLD);
-  MPI_Reduce(&tmp_cells, &tot_cells, 1, MPI_INT, MPI_SUM, MASTER, MPI_COMM_WORLD);
   if (rank == MASTER) {
+      tot_u_x = tmp_u_x;
+      tot_cells = tmp_cells;
+      for (ii = 1; ii < size; ii++) {
+          MPI_Recv(&tmp_u_x, 1, MPI_FLOAT, ii, 0, MPI_COMM_WORLD, &status);
+          MPI_Recv(&tmp_cells, 1, MPI_INT, ii, 0, MPI_COMM_WORLD, &status);
+          tot_u_x += tmp_u_x;
+          tot_cells += tmp_cells;
+      }
       return tot_u_x / (float)tot_cells;
   } else {
+      MPI_Send(&tmp_u_x, 1, MPI_FLOAT, MASTER, 0, MPI_COMM_WORLD);
+      MPI_Send(&tmp_cells, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD);
       return 0;
   }
 }
