@@ -697,6 +697,22 @@ float av_velocity(const t_param params, const t_speed* cells, const int* obstacl
   float local_density;  /* total density in cell */
   float tot_u_x, tmp_u_x;        /* accumulated x-components of velocity */
   MPI_Status status;
+  MPI_Datatype av_vel_type;
+  MPI_Datatype types_av_vel[2];
+  MPI_Aint base_addr, addr;
+  MPI_Aint displacements_av_vel[2];
+  int block_lengths_av_vel[2];
+
+  MPI_Address(&tmp_u_x, &base_addr);
+  displacements_av_vel[0] = 0;
+  block_lengths_av_vel[0] = 1;
+  types_av_vel[0] = MPI_FLOAT;
+  MPI_Address(&tmp_cells, &addr);
+  displacements_av_vel[1] = addr - base_addr;
+  block_lengths_av_vel[1] = 1;
+  types_av_vel[1] = MPI_INT;
+  MPI_Type_create_struct(2, block_lengths_av_vel, displacements_av_vel, types_av_vel, &av_vel_type);
+  MPI_Type_commit(&av_vel_type);
 
   /* initialise */
   tmp_u_x = 0.0;
@@ -729,15 +745,15 @@ float av_velocity(const t_param params, const t_speed* cells, const int* obstacl
       tot_u_x = tmp_u_x;
       tot_cells = tmp_cells;
       for (ii = 1; ii < size; ii++) {
-          MPI_Recv(&tmp_u_x, 1, MPI_FLOAT, ii, 0, MPI_COMM_WORLD, &status);
-          MPI_Recv(&tmp_cells, 1, MPI_INT, ii, 0, MPI_COMM_WORLD, &status);
+          MPI_Recv(&tmp_u_x, 1, av_vel_type, ii, 0, MPI_COMM_WORLD, &status);
           tot_u_x += tmp_u_x;
           tot_cells += tmp_cells;
       }
+      MPI_Type_free(&av_vel_type);
       return tot_u_x / (float)tot_cells;
   } else {
-      MPI_Send(&tmp_u_x, 1, MPI_FLOAT, MASTER, 0, MPI_COMM_WORLD);
-      MPI_Send(&tmp_cells, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD);
+      MPI_Send(&tmp_u_x, 1, av_vel_type, MASTER, 0, MPI_COMM_WORLD);
+      MPI_Type_free(&av_vel_type);
       return 0;
   }
 }
