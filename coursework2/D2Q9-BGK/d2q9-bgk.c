@@ -517,6 +517,8 @@ int initialise(const char* paramfile, const char* obstaclefile,
           if (remainder != 0) {
               params->ny = *distribution + 1;
               send_params.ny = params->ny;
+          } else {
+              params->ny = *distribution;
           }
           for (ii = 1; ii < size; ii++) {
               if (ii == remainder) send_params.ny--;
