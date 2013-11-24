@@ -182,17 +182,8 @@ int main(int argc, char* argv[])
 
 int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
 {
-  int ii, jj;
   accelerate_flow(params,cells,obstacles);
   propagate(params,cells,tmp_cells);
-  for (jj = 0; jj < params.nx; jj++) {
-    printf("%d %d %f %f %f %f %f %f %f %f %f\n", 0, jj, tmp_cells[(params.ny - 1)*params.nx + jj].speeds[0], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[1], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[2], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[3], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[4], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[5], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[6], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[7], tmp_cells[(params.ny - 1)*params.nx + jj].speeds[8]);
-  }
-  for (ii = 0; ii <= 5; ii++) {
-    for (jj = 0; jj < params.nx; jj++) {
-      printf("%d %d %f %f %f %f %f %f %f %f %f\n", ii + 1, jj, tmp_cells[(ii)*params.nx + jj].speeds[0], tmp_cells[(ii)*params.nx + jj].speeds[1], tmp_cells[(ii)*params.nx + jj].speeds[2], tmp_cells[(ii)*params.nx + jj].speeds[3], tmp_cells[(ii)*params.nx + jj].speeds[4], tmp_cells[(ii)*params.nx + jj].speeds[5], tmp_cells[(ii)*params.nx + jj].speeds[6], tmp_cells[(ii)*params.nx + jj].speeds[7], tmp_cells[(ii)*params.nx + jj].speeds[8]);
-    }
-  }
   rebound_or_collision(params,cells,tmp_cells,obstacles);
   return EXIT_SUCCESS; 
 }
