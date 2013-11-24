@@ -161,17 +161,17 @@ int main(int argc, char* argv[])
   /* initialise our data structures and load values from file */
   initialise(paramfile, obstaclefile, &params, &cells, &tmp_cells, &obstacles, &av_vels, size, rank, &distribution);
 
-  displacements_cells[0] = 0;
-  types_cells[0] = MPI_FLOAT;
-  block_length_cells[0] = NSPEEDS;
-  MPI_Type_create_struct(1, block_length_cells, displacements_cells, types_cells, &cells_type);
-  MPI_Type_commit(&cells_type);
-
   if (rank == MASTER) {
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
   }
+
+  displacements_cells[0] = 0;
+  types_cells[0] = MPI_FLOAT;
+  block_length_cells[0] = NSPEEDS;
+  MPI_Type_create_struct(1, block_length_cells, displacements_cells, types_cells, &cells_type);
+  MPI_Type_commit(&cells_type);
 
   for (ii=0;ii<params.maxIters;ii++) {
     timestep(params,cells,tmp_cells,obstacles, size, rank, cells_type);
