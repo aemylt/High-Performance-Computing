@@ -94,12 +94,12 @@ int initialise(const char* paramfile, const char* obstaclefile,
 ** timestep calls, in order, the functions:
 ** accelerate_flow(), propagate(), rebound() & collision()
 */
-int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type);
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles);
-int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3);
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3);
-int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles);
-int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels, int size, int rank, int distribution);
+int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, const int* obstacles, const int size, const int rank, const MPI_Datatype cells_type);
+int accelerate_flow(const t_param params, t_speed* cells, const int* obstacles);
+int synchronise(const t_param params, t_speed* cells, const int size, const int rank, const MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3);
+int propagate(const t_param params, const t_speed* cells, t_speed* tmp_cells, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3);
+int rebound_or_collision(const t_param params, t_speed* cells, const t_speed* tmp_cells, const int* obstacles);
+int write_values(const t_param params, const t_speed* cells, int* obstacles, const float* av_vels, const int size, const int rank, const int distribution);
 
 /* finalise, including freeing up allocated memory */
 int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr,
@@ -107,13 +107,13 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
 
 /* Sum all the densities in the grid.
 ** The total should remain constant from one timestep to the next. */
-float total_density(const t_param params, t_speed* cells);
+float total_density(const t_param params, const t_speed* cells);
 
 /* compute average velocity */
-float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size, int rank);
+float av_velocity(const t_param params, const t_speed* cells, const int* obstacles, const int size, const int rank);
 
 /* calculate Reynolds number */
-float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank);
+float calc_reynolds(const t_param params, const t_speed* cells, const int* obstacles, const int size, const int rank);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
   return EXIT_SUCCESS;
 }
 
-int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles, int size, int rank, MPI_Datatype cells_type)
+int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, const int* obstacles, const int size, const int rank, const MPI_Datatype cells_type)
 {
   MPI_Request req0, req1, req2, req3;
   accelerate_flow(params,cells,obstacles);
@@ -224,7 +224,7 @@ int timestep(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obst
   return EXIT_SUCCESS; 
 }
 
-int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
+int accelerate_flow(const t_param params, t_speed* cells, const int* obstacles)
 {
   int ii,jj;     /* generic counters */
   float w1,w2;  /* weighting factors */
@@ -256,7 +256,7 @@ int accelerate_flow(const t_param params, t_speed* cells, int* obstacles)
   return EXIT_SUCCESS;
 }
 
-int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3)
+int synchronise(const t_param params, t_speed* cells, const int size, const int rank, const MPI_Datatype cells_type, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3)
 {
     int right = (rank + 1) % size;
     int left = (rank == MASTER) ? size - 1 : rank - 1;
@@ -274,7 +274,7 @@ int synchronise(const t_param params, t_speed* cells, int size, int rank, MPI_Da
     return EXIT_SUCCESS;
 }
 
-int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3)
+int propagate(const t_param params, const t_speed* cells, t_speed* tmp_cells, MPI_Request* req0, MPI_Request* req1, MPI_Request* req2, MPI_Request* req3)
 {
   int ii,jj;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
@@ -313,7 +313,7 @@ int propagate(const t_param params, t_speed* cells, t_speed* tmp_cells, MPI_Requ
   return EXIT_SUCCESS;
 }
 
-int rebound_or_collision(const t_param params, t_speed* cells, t_speed* tmp_cells, int* obstacles)
+int rebound_or_collision(const t_param params, t_speed* cells, const t_speed* tmp_cells, const int* obstacles)
 {
   int ii,jj,kk;                 /* generic counters */
   const float c_sq = 1.0/3.0;  /* square of speed of sound */
@@ -690,7 +690,7 @@ int finalise(const t_param* params, t_speed** cells_ptr, t_speed** tmp_cells_ptr
   return EXIT_SUCCESS;
 }
 
-float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size, int rank)
+float av_velocity(const t_param params, const t_speed* cells, const int* obstacles, const int size, const int rank)
 {
   int    ii,jj,kk;       /* generic counters */
   int    tot_cells, tmp_cells = 0;  /* no. of cells used in calculation */
@@ -742,14 +742,14 @@ float av_velocity(const t_param params, t_speed* cells, int* obstacles, int size
   }
 }
 
-float calc_reynolds(const t_param params, t_speed* cells, int* obstacles, int size, int rank)
+float calc_reynolds(const t_param params, const t_speed* cells, const int* obstacles, const int size, const int rank)
 {
   const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
   return av_velocity(params,cells,obstacles, size, rank) * params.reynolds_dim / viscosity;
 }
 
-float total_density(const t_param params, t_speed* cells)
+float total_density(const t_param params, const t_speed* cells)
 {
   int ii,jj,kk;        /* generic counters */
   float total, tmp_total = 0.0;  /* accumulator */
@@ -766,7 +766,7 @@ float total_density(const t_param params, t_speed* cells)
   return total;
 }
 
-int write_values(const t_param params, t_speed* cells, int* obstacles, float* av_vels, int size, int rank, int distribution)
+int write_values(const t_param params, const t_speed* cells, int* obstacles, const float* av_vels, const int size, const int rank, const int distribution)
 {
   FILE* fp = NULL;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
