@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
   }
-  write_values(params,cells,obstacles,av_vels,size,rank,distribution);
+  //write_values(params,cells,obstacles,av_vels,size,rank,distribution);
   finalise(&params, &cells, &tmp_cells, &obstacles, &av_vels);
   MPI_Type_free(&cells_type);
   
@@ -433,6 +433,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   float w0,w1,w2;       /* weighting factors */
   MPI_Aint base_addr, addr;
   int remainder = 0;
+  MPI_Status status;
 
   if (rank == MASTER) {
       /* open the parameter file */
@@ -513,8 +514,16 @@ int initialise(const char* paramfile, const char* obstaclefile,
       
       if (rank == MASTER) {
           remainder = params->ny % size;
-          params->ny = send_params.ny + remainder;
+          if (remainder != 0) {
+              params->ny = distribution + 1;
+              send_params.ny = params->ny;
+          }
+          for (ii = 0; ii < size; ii++) {
+              if (ii == remainder) send_params.ny = send_params.ny - 1;
+              MPI_Send(&send_params, 1, params_type, ii, 0, MPI_COMM_WORLD);
+          }
       } else {
+          MPI_Recv(&send_params, 1, params_type, MASTER, 0, MPI_COMM_WORLD, &status);
           params->nx = send_params.nx;
           params->ny = send_params.ny;
           params->maxIters = send_params.maxIters;
@@ -654,7 +663,6 @@ int initialise(const char* paramfile, const char* obstaclefile,
       */
       *av_vels_ptr = (float*)malloc(sizeof(float)*params->maxIters);
   } else {
-      MPI_Status status;
       MPI_Recv(&xx, 1, obstacles_type, MASTER, 0, MPI_COMM_WORLD, &status);
       while (xx != -1) {
           if ( yy<0 || yy>params->ny-1 )
