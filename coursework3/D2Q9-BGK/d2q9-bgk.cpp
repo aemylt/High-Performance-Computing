@@ -427,7 +427,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
     die("cannot allocate memory for tmp_cells",__LINE__,__FILE__);
   
   /* the map of obstacles */
-  *obstacles_ptr = malloc(sizeof(int*)*(params->ny*params->nx));
+  *obstacles_ptr = (int*)malloc(sizeof(int*)*(params->ny*params->nx));
   if (*obstacles_ptr == NULL) 
     die("cannot allocate column memory for obstacles",__LINE__,__FILE__);
 
