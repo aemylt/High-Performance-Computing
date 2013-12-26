@@ -5,7 +5,7 @@ EXES=$(EXE1)
 
 CC=g++
 TAU=tau_cc.sh
-CFLAGS=-lm -Wall -O3 -fopenmp
+CFLAGS=-lm -Wall -O3 -I Cpp_common
 
 all: $(EXES)
 
