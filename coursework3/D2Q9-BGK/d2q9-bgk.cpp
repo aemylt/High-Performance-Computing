@@ -68,6 +68,7 @@ typedef struct {
   int    ny;            /* no. of cells in y-direction */
   int    maxIters;      /* no. of iterations */
   int    reynolds_dim;  /* dimension for Reynolds number */
+  int tot_cells;
   float density;       /* density per link */
   float accel;         /* density redistribution */
   float omega;         /* relaxation parameter */
@@ -396,6 +397,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   if(retval != 1) die ("could not read param file: accel",__LINE__,__FILE__);
   retval = fscanf(fp,"%f\n",&(params->omega));
   if(retval != 1) die ("could not read param file: omega",__LINE__,__FILE__);
+  params->tot_cells = params->nx * params->ny;
 
   /* and close up the file */
   fclose(fp);
@@ -483,6 +485,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
       die("obstacle blocked value should be 1",__LINE__,__FILE__);
     /* assign to array */
     (obstacles_ptr)[yy*params->nx + xx] = blocked;
+    params->tot_cells--;
   }
   
   /* and close the file */
@@ -518,7 +521,6 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr, std::vecto
 float av_velocity(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles)
 {
   int    ii,jj,kk;       /* generic counters */
-  int    tot_cells = 0;  /* no. of cells used in calculation */
   float local_density;  /* total density in cell */
   float tot_u_x;        /* accumulated x-components of velocity */
 
@@ -544,12 +546,11 @@ float av_velocity(const t_param params, std::vector<t_speed> & cells, std::vecto
                        cells[ii*params.nx + jj].speeds[7])) /
           local_density;
         /* increase counter of inspected cells */
-        ++tot_cells;
       }
     }
   }
 
-  return tot_u_x / (float)tot_cells;
+  return tot_u_x / (float)params.tot_cells;
 }
 
 float calc_reynolds(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles)
