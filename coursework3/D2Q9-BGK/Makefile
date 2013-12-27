@@ -1,19 +1,39 @@
-# Makefile
+#
+#  USAGE:
+#     make          ... to build the program
+#     make test     ... to run the default test case
+#     make clean    ... remove object and executable files.
+#
 
-EXE1=d2q9-bgk.exe
-EXES=$(EXE1)
+# verify that you are including the right make.def file for the platform
+include make.def
 
-CC=g++
-TAU=tau_cc.sh
-CFLAGS=-lm -Wall -O3 -I Cpp_common
+COMMON      = Cpp_common
+
+EXES =    d2q9-bgk$(EXE) 
+
 
 all: $(EXES)
 
-$(EXES): %.exe : %.cpp
-	$(CC) $(CFLAGS) $^ -o $@
+d2q9-bgk$(EXE): d2q9-bgk.$(OBJ)  
+	$(CLINKER) $(CFLAGS) $(OPENCLFLAGS) -o d2q9-bgk$(EXE) d2q9-bgk.$(OBJ) \
+                         $(LIBS)
 
-.PHONY: all clean
+test: $(EXES)
+	$(PRE)pi$(EXE);
 
 clean:
-	\rm -f $(EXES)
+	$(RM) $(EXES) *.$(OBJ) 
+
+veryclean:
+	$(RM) $(EXES)  *.$(OBJ)
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .$(OBJ)
+
+.c.$(OBJ):
+	$(CC) $(CFLAGS) -c $<
+
+.cpp.$(OBJ):
+	$(CC) $(CFLAGS) -c $<
 
