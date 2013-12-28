@@ -58,6 +58,7 @@
 #include<stdlib.h>
 #include<time.h>
 #include<vector>
+#include <iostream>
 #include<sys/time.h>
 #include<sys/resource.h>
 
@@ -93,13 +94,6 @@ int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
-/* 
-** The main calculation methods.
-** timestep calls, in order, the functions:
-** accelerate_flow(), propagate(), rebound() & collision()
-*/
-int timestep(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells, std::vector<int> & obstacles);
-int accelerate_flow(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles);
 int propagate(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells);
 int rebound_or_collision(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells, std::vector<int> & obstacles);
 int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float* av_vels);
@@ -132,8 +126,10 @@ int main(int argc, char* argv[])
   char*    obstaclefile;      /* name of a the input obstacle file */
   t_param  params;            /* struct to hold parameter values */
   std::vector<t_speed> cells;  /* grid containing fluid densities */
+  cl::Buffer cell_buf;
   std::vector<t_speed> tmp_cells;  /* scratch space */
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
+  cl::Buffer obs_buf;
   float*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
   int      ii;                /* generic counter */
   struct timeval timstr;      /* structure to hold elapsed time */
@@ -153,77 +149,67 @@ int main(int argc, char* argv[])
 
   /* initialise our data structures and load values from file */
   initialise(paramfile, obstaclefile, &params, cells, tmp_cells, obstacles, &av_vels);
-
-  /* iterate for maxIters timesteps */
-  gettimeofday(&timstr,NULL);
-  tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-
-  for (ii=0;ii<params.maxIters;ii++) {
-    timestep(params,cells,tmp_cells,obstacles);
-    av_vels[ii] = av_velocity(params,cells,obstacles);
-#ifdef DEBUG
-    printf("==timestep: %d==\n",ii);
-    printf("av velocity: %.12E\n", av_vels[ii]);
-    printf("tot density: %.12E\n",total_density(params,cells));
-#endif
-  }
-  gettimeofday(&timstr,NULL);
-  toc=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-  getrusage(RUSAGE_SELF, &ru);
-  timstr=ru.ru_utime;        
-  usrtim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-  timstr=ru.ru_stime;        
-  systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-
-  /* write final values and free memory */
-  printf("==done==\n");
-  printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cells,obstacles));
-  printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
-  printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
-  printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
-  write_values(params,cells,obstacles,av_vels);
-  finalise(&params, cells, tmp_cells, obstacles, &av_vels);
   
-  return EXIT_SUCCESS;
-}
+  try {
+      // Create a context
+      cl::Context context(DEVICE);
 
-int timestep(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells, std::vector<int> & obstacles)
-{
-  accelerate_flow(params,cells,obstacles);
-  propagate(params,cells,tmp_cells);
-  rebound_or_collision(params,cells,tmp_cells,obstacles);
-  return EXIT_SUCCESS; 
-}
+      // Load in kernel source, creating a program object for the context
 
-int accelerate_flow(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles)
-{
-  int ii,jj;     /* generic counters */
-  float w1,w2;  /* weighting factors */
-  
-  /* compute weighting factors */
-  w1 = params.density * params.accel / 9.0;
-  w2 = params.density * params.accel / 36.0;
+      cl::Program program(context, util::loadProgram("d2q9-bgk.cl"), true);
 
-  /* modify the first column of the grid */
-  jj=0;
-  for(ii=0;ii<params.ny;ii++) {
-    /* if the cell is not occupied and
-    ** we don't send a density negative */
-    if( !obstacles[ii*params.nx + jj] && 
-        (cells[ii*params.nx + jj].speeds[3] - w1) > 0.0 &&
-        (cells[ii*params.nx + jj].speeds[6] - w2) > 0.0 &&
-        (cells[ii*params.nx + jj].speeds[7] - w2) > 0.0 ) {
-      /* increase 'east-side' densities */
-      cells[ii*params.nx + jj].speeds[1] += w1;
-      cells[ii*params.nx + jj].speeds[5] += w2;
-      cells[ii*params.nx + jj].speeds[8] += w2;
-      /* decrease 'west-side' densities */
-      cells[ii*params.nx + jj].speeds[3] -= w1;
-      cells[ii*params.nx + jj].speeds[6] -= w2;
-      cells[ii*params.nx + jj].speeds[7] -= w2;
-    }
+      // Get the command queue
+      cl::CommandQueue queue(context);
+
+      // Create the kernel functor
+ 
+      auto accelerate_flow = cl::make_kernel<t_params, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
+      cell_buf = cl::Buffer(context, begin(cells), end(cells));
+      obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles));
+
+      /* iterate for maxIters timesteps */
+      gettimeofday(&timstr,NULL);
+      tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+    
+      for (ii=0;ii<params.maxIters;ii++) {
+        accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params, cell_buf, obs_buf);
+        cl::copy(queue, cell_buf, begin(cells), end(cells));
+        propagate(params,cells,tmp_cells);
+        rebound_or_collision(params,cells,tmp_cells,obstacles);
+        av_vels[ii] = av_velocity(params,cells,obstacles);
+    #ifdef DEBUG
+        printf("==timestep: %d==\n",ii);
+        printf("av velocity: %.12E\n", av_vels[ii]);
+        printf("tot density: %.12E\n",total_density(params,cells));
+    #endif
+      }
+      gettimeofday(&timstr,NULL);
+      toc=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      getrusage(RUSAGE_SELF, &ru);
+      timstr=ru.ru_utime;        
+      usrtim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      timstr=ru.ru_stime;        
+      systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+    
+      /* write final values and free memory */
+      printf("==done==\n");
+      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cells,obstacles));
+      printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
+      printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
+      printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
+      write_values(params,cells,obstacles,av_vels);
+      finalise(&params, cells, tmp_cells, obstacles, &av_vels);
+  } catch (cl::Error err) {
+		std::cout << "Exception\n";
+		std::cerr 
+            << "ERROR: "
+            << err.what()
+            << "("
+            << err_code(err.err())
+            << ")"
+            << std::endl;
   }
-
+  
   return EXIT_SUCCESS;
 }
 
