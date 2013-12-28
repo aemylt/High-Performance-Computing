@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 
       // Create the kernel functor
  
-      auto accelerate_flow = cl::make_kernel<t_params, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
+      auto accelerate_flow = cl::make_kernel<int, int, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
       cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
 
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
     
       for (ii=0;ii<params.maxIters;ii++) {
-        accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params, cell_buf, obs_buf);
+        accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.density, params.accel, cell_buf, obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
         propagate(params,cells,tmp_cells);
         rebound_or_collision(params,cells,tmp_cells,obstacles);

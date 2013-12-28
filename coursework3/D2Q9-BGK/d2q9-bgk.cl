@@ -17,14 +17,14 @@ typedef struct {
   float speeds[NSPEEDS];
 } t_speed;
 
-__kernel void accelerate_flow(const t_param params, __global t_speed *cells, __global int *obstacles)
+__kernel void accelerate_flow(float density, float accel, __global t_speed *cells, __global int *obstacles)
 {
   int ii,jj;     /* generic counters */
   float w1,w2;  /* weighting factors */
   
   /* compute weighting factors */
-  w1 = params.density * params.accel / 9.0;
-  w2 = params.density * params.accel / 36.0;
+  w1 = density * accel / 9.0;
+  w2 = density * accel / 36.0;
 
   /* modify the first column of the grid */
   jj=0;
