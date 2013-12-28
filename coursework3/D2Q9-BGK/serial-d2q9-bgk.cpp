@@ -49,9 +49,6 @@
 ** if you choose a different obstacle file.
 */
 
-#define __CL_ENABLE_EXCEPTIONS
-
-#include "cl.hpp"
 #include "util.hpp" // utility library
 
 #include<stdio.h>
