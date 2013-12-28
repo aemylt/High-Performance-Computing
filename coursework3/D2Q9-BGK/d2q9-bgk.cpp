@@ -169,14 +169,14 @@ int main(int argc, char* argv[])
       // Create the kernel functor
  
       auto accelerate_flow = cl::make_kernel<int, float, float, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
-      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
-      obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
     
       for (ii=0;ii<params.maxIters;ii++) {
+        cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
+        obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
         accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.nx, params.density, params.accel, cell_buf, obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
         propagate(params,cells,tmp_cells);
