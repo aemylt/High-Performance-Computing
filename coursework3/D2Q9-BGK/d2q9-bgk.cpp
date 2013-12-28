@@ -164,8 +164,8 @@ int main(int argc, char* argv[])
       // Create the kernel functor
  
       auto accelerate_flow = cl::make_kernel<t_params, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
-      cell_buf = cl::Buffer(context, begin(cells), end(cells));
-      obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles));
+      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
+      obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
@@ -204,9 +204,6 @@ int main(int argc, char* argv[])
 		std::cerr 
             << "ERROR: "
             << err.what()
-            << "("
-            << err_code(err.err())
-            << ")"
             << std::endl;
   }
   
