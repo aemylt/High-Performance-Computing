@@ -113,10 +113,10 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
 float total_density(const t_param params, std::vector<t_speed> & cells);
 
 /* compute average velocity */
-float av_velocity(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles);
+float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue);
 
 /* calculate Reynolds number */
-float calc_reynolds(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles);
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
         cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
-        av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel);
+        av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
         printf("av velocity: %.12E\n", av_vels[ii]);
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     
       /* write final values and free memory */
       printf("==done==\n");
-      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,loc_vel));
+      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue));
       printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
@@ -374,7 +374,7 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
   return EXIT_SUCCESS;
 }
 
-float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel)
+float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue)
 {
   int ii;
   vector<float> results;
@@ -389,11 +389,11 @@ float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf,
   return tot_u_x / (float)params.tot_cells;
 }
 
-float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel)
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue)
 {
   const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
-  return av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel) * params.reynolds_dim / viscosity;
+  return av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel, queue) * params.reynolds_dim / viscosity;
 }
 
 float total_density(const t_param params, std::vector<t_speed> & cells)
