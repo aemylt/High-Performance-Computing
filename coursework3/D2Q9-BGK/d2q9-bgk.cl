@@ -36,7 +36,7 @@ __kernel void accelerate_flow(const int nx, const float density, const float acc
 
 __kernel void propagate(__global t_speed *cells, __global t_speed *tmp_cells)
 {
-  int ii,jj;            /* generic counters */
+  int ii,jj,nx,ny;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
 
   /* determine indices of axis-direction neighbours
