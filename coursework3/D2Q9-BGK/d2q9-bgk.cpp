@@ -96,13 +96,13 @@ enum boolean { FALSE, TRUE };
 
 /* load params, allocate memory, load obstacles & initialise fluid particle densities */
 int initialise(const char* paramfile, const char* obstaclefile,
-               t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
+               t_param* params, std::vector<t_speed> & cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
 int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float* av_vels);
 
 /* finalise, including freeing up allocated memory */
-int finalise(const t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
+int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
              std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
 /* Sum all the densities in the grid.
@@ -130,7 +130,6 @@ int main(int argc, char* argv[])
   t_param  params;            /* struct to hold parameter values */
   std::vector<t_speed> cells;  /* grid containing fluid densities */
   cl::Buffer cell_buf;
-  std::vector<t_speed> tmp_cells;  /* scratch space */
   cl::Buffer tmp_buf;
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
   cl::Buffer obs_buf;
@@ -152,7 +151,7 @@ int main(int argc, char* argv[])
   }
 
   /* initialise our data structures and load values from file */
-  initialise(paramfile, obstaclefile, &params, cells, tmp_cells, obstacles, &av_vels);
+  initialise(paramfile, obstaclefile, &params, cells, obstacles, &av_vels);
   
   try {
       // Create a context
@@ -171,6 +170,7 @@ int main(int argc, char* argv[])
       auto propagate = cl::make_kernel<cl::Buffer, cl::Buffer>(program, "propagate");
       auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
+      tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
@@ -179,11 +179,7 @@ int main(int argc, char* argv[])
       for (ii=0;ii<params.maxIters;ii++) {
         cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
         accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.nx, params.density, params.accel, cell_buf, obs_buf);
-        tmp_buf = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(t_speed) * params.nx * params.ny);
         propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),cell_buf,tmp_buf);
-        cl::copy(queue, tmp_buf, begin(tmp_cells), end(tmp_cells));
-        tmp_buf = cl::Buffer(context, begin(tmp_cells), end(tmp_cells), true);
-        cell_buf = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(t_speed) * params.nx * params.ny);
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
         av_vels[ii] = av_velocity(params,cells,obstacles);
@@ -208,7 +204,7 @@ int main(int argc, char* argv[])
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
       write_values(params,cells,obstacles,av_vels);
-      finalise(&params, cells, tmp_cells, obstacles, &av_vels);
+      finalise(&params, cells, obstacles, &av_vels);
   } catch (cl::Error err) {
 		std::cout << "Exception\n";
 		std::cerr 
@@ -224,7 +220,7 @@ int main(int argc, char* argv[])
 }
 
 int initialise(const char* paramfile, const char* obstaclefile,
-               t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
+               t_param* params, std::vector<t_speed> & cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr)
 {
   char   message[1024];  /* message buffer */
@@ -286,11 +282,6 @@ int initialise(const char* paramfile, const char* obstaclefile,
   if (cells_ptr.size() == 0) 
     die("cannot allocate memory for cells",__LINE__,__FILE__);
 
-  /* 'helper' grid, used as scratch space */
-  tmp_cells_ptr.resize(params->ny*params->nx);
-  if (tmp_cells_ptr.size() == 0) 
-    die("cannot allocate memory for tmp_cells",__LINE__,__FILE__);
-  
   /* the map of obstacles */
   obstacles_ptr.resize(params->ny*params->nx);
   if (obstacles_ptr.size() == 0) 
@@ -360,15 +351,13 @@ int initialise(const char* paramfile, const char* obstaclefile,
   return EXIT_SUCCESS;
 }
 
-int finalise(const t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
+int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
              std::vector<int> & obstacles_ptr, float** av_vels_ptr)
 {
   /* 
   ** free up allocated memory
   */
   std::vector<t_speed>().swap(cells_ptr);
-
-  std::vector<t_speed>().swap(tmp_cells_ptr);
 
   std::vector<int>().swap(obstacles_ptr);
 
