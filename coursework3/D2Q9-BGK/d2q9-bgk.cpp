@@ -377,7 +377,7 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
 float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue)
 {
   int ii;
-  vector<float> results;
+  std::vector<float> results;
   float tot_u_x = 0;
   auto reduce = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(sum_velocity);
   reduce(cl::EnqueueArgs(queue, cl::NDRange(NGROUPS * NUNITS), cl::NDRange(NUNITS)), cell_buf, obs_buf, cl::Local(sizeof(float) * NUNITS), params.nx * params.ny, loc_vel);
