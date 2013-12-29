@@ -99,7 +99,6 @@ int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, std::vector<t_speed> & cells_ptr, std::vector<t_speed> & tmp_cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
-int propagate(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells);
 int rebound_or_collision(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells, std::vector<int> & obstacles);
 int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float* av_vels);
 
@@ -133,6 +132,7 @@ int main(int argc, char* argv[])
   std::vector<t_speed> cells;  /* grid containing fluid densities */
   cl::Buffer cell_buf;
   std::vector<t_speed> tmp_cells;  /* scratch space */
+  cl::Buffer tmp_buf;
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
   cl::Buffer obs_buf;
   float*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
@@ -169,6 +169,7 @@ int main(int argc, char* argv[])
       // Create the kernel functor
  
       auto accelerate_flow = cl::make_kernel<int, float, float, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
+      auto propagate = cl::make_kernel<cl::Buffer, cl::Buffer>(program, "propagate");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
 
       /* iterate for maxIters timesteps */
@@ -179,7 +180,10 @@ int main(int argc, char* argv[])
         cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
         accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.nx, params.density, params.accel, cell_buf, obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
-        propagate(params,cells,tmp_cells);
+        tmp_buf = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(t_speed) * params.nx * params.ny);
+        cell_buf = cl::Buffer(context, CL_MEM_READ_ONLY, begin(cells), end(cells), true);
+        propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),cell_buf,tmp_buf);
+        cl::copy(queue, tmp_buf, begin(tmp_cells), end(tmp_cells));
         rebound_or_collision(params,cells,tmp_cells,obstacles);
         av_vels[ii] = av_velocity(params,cells,obstacles);
     #ifdef DEBUG
@@ -215,39 +219,6 @@ int main(int argc, char* argv[])
             << std::endl;
   }
   
-  return EXIT_SUCCESS;
-}
-
-int propagate(const t_param params, std::vector<t_speed> & cells, std::vector<t_speed> & tmp_cells)
-{
-  int ii,jj;            /* generic counters */
-  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
-
-  /* loop over _all_ cells */
-  for(ii=0;ii<params.ny;ii++) {
-    for(jj=0;jj<params.nx;jj++) {
-      /* determine indices of axis-direction neighbours
-      ** respecting periodic boundary conditions (wrap around) */
-      y_n = (ii + 1) % params.ny;
-      x_e = (jj + 1) % params.nx;
-      y_s = (ii == 0) ? (ii + params.ny - 1) : (ii - 1);
-      x_w = (jj == 0) ? (jj + params.nx - 1) : (jj - 1);
-      /* propagate densities to neighbouring cells, following
-      ** appropriate directions of travel and writing into
-      ** scratch space grid */
-      tmp_cells[ii *params.nx + jj].speeds[0]  = cells[ii*params.nx + jj].speeds[0]; /* central cell, */
-                                                                                     /* no movement   */
-      tmp_cells[ii *params.nx + jj].speeds[1] = cells[ii*params.nx + x_w].speeds[1]; /* east */
-      tmp_cells[ii*params.nx + jj].speeds[2]  = cells[y_s*params.nx + jj].speeds[2]; /* north */
-      tmp_cells[ii *params.nx + jj].speeds[3] = cells[ii*params.nx + x_e].speeds[3]; /* west */
-      tmp_cells[ii*params.nx + jj].speeds[4]  = cells[y_n*params.nx + jj].speeds[4]; /* south */
-      tmp_cells[ii*params.nx + jj].speeds[5] = cells[y_s*params.nx + x_w].speeds[5]; /* north-east */
-      tmp_cells[ii*params.nx + jj].speeds[6] = cells[y_s*params.nx + x_e].speeds[6]; /* north-west */
-      tmp_cells[ii*params.nx + jj].speeds[7] = cells[y_n*params.nx + x_e].speeds[7]; /* south-west */      
-      tmp_cells[ii*params.nx + jj].speeds[8] = cells[y_n*params.nx + x_w].speeds[8]; /* south-east */      
-    }
-  }
-
   return EXIT_SUCCESS;
 }
 
