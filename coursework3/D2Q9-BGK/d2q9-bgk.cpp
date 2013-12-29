@@ -71,6 +71,9 @@
 #define DEVICE CL_DEVICE_TYPE_DEFAULT
 #endif
 
+#define NGROUPS 64
+#define NUNITS  16
+
 /* struct to hold the parameter values */
 typedef struct {
   int    nx;            /* no. of cells in x-direction */
@@ -133,6 +136,8 @@ int main(int argc, char* argv[])
   cl::Buffer tmp_buf;
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
   cl::Buffer obs_buf;
+  cl::Local scratch;
+  cl::Buffer loc_vel;
   float*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
   int      ii;                /* generic counter */
   struct timeval timstr;      /* structure to hold elapsed time */
@@ -169,20 +174,24 @@ int main(int argc, char* argv[])
       auto accelerate_flow = cl::make_kernel<int, float, float, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
       auto propagate = cl::make_kernel<cl::Buffer, cl::Buffer>(program, "propagate");
       auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
+      cl::Kernel sum_velocity(program, "sum_velocity");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
+      scratch = cl::Local(sizeof(float) * NUNITS);
+      loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
     
       for (ii=0;ii<params.maxIters;ii++) {
-        cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
         accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.nx, params.density, params.accel, cell_buf, obs_buf);
         propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),cell_buf,tmp_buf);
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
-        av_vels[ii] = av_velocity(params,cells,obstacles);
+        cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
+        av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,scratch,loc_vel);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
         printf("av velocity: %.12E\n", av_vels[ii]);
@@ -199,7 +208,7 @@ int main(int argc, char* argv[])
     
       /* write final values and free memory */
       printf("==done==\n");
-      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cells,obstacles));
+      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,scratch,loc_vel));
       printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
@@ -367,45 +376,26 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
   return EXIT_SUCCESS;
 }
 
-float av_velocity(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles)
+float av_velocity(const t_param params, cl::Buffer cell_buf, cell_buf obs_buf, cl::Kernel sum_velocity, cl::Local scratch, cl::Buffer loc_vel)
 {
-  int    ii,jj,kk;       /* generic counters */
-  float local_density;  /* total density in cell */
-  float tot_u_x;        /* accumulated x-components of velocity */
-
-  /* initialise */
-  tot_u_x = 0.0;
-
-  /* loop over all non-blocked cells */
-  for(ii=0;ii<params.ny;ii++) {
-    for(jj=0;jj<params.nx;jj++) {
-      /* ignore occupied cells */
-      if(!obstacles[ii*params.nx + jj]) {
-        /* local density total */
-        local_density = 0.0;
-        for(kk=0;kk<NSPEEDS;kk++) {
-          local_density += cells[ii*params.nx + jj].speeds[kk];
-        }
-        /* x-component of velocity */
-        tot_u_x += (cells[ii*params.nx + jj].speeds[1] +
-                    cells[ii*params.nx + jj].speeds[5] +
-                    cells[ii*params.nx + jj].speeds[8]
-                    - (cells[ii*params.nx + jj].speeds[3] +
-                       cells[ii*params.nx + jj].speeds[6] +
-                       cells[ii*params.nx + jj].speeds[7])) /
-          local_density;
-      }
-    }
+  int ii;
+  vector<float> results;
+  float tot_u_x = 0;
+  auto reduce = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(sum_velocity);
+  reduce(cl::EnqueueArgs(queue, cl::NDRange(NGROUPS * NUNITS), cl::NDRange(NUNITS)), cell_buf, obs_buf, scratch, params.nx * params.ny, loc_vel);
+  cl::copy(queue, loc_vel, begin(results), end(results));
+  for (int ii = 0; ii < NGROUPS; ii++) {
+      tot_u_x += results[ii];
   }
 
   return tot_u_x / (float)params.tot_cells;
 }
 
-float calc_reynolds(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles)
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cell_buf obs_buf, cl::Kernel sum_velocity, cl::Local scratch, cl::Buffer loc_vel)
 {
   const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
-  return av_velocity(params,cells,obstacles) * params.reynolds_dim / viscosity;
+  return av_velocity(params,cell_buf,obs_buf,sum_velocity,scratch,loc_vel) * params.reynolds_dim / viscosity;
 }
 
 float total_density(const t_param params, std::vector<t_speed> & cells)
