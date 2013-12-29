@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
  
       auto accelerate_flow = cl::make_kernel<int, float, float, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
       auto propagate = cl::make_kernel<cl::Buffer, cl::Buffer>(program, "propagate");
-      auto accelerate_flow = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
+      auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
 
       /* iterate for maxIters timesteps */

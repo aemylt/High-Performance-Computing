@@ -64,7 +64,7 @@ __kernel void propagate(__global t_speed *cells, __global t_speed *tmp_cells)
   tmp_cells[ii*nx + jj].speeds[8] = cells[y_n*nx + x_w].speeds[8]; /* south-east */   
 }
 
-int rebound_or_collision(const float omega, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
+__kernel void rebound_or_collision(const float omega, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
 {
   int ii,jj,kk,nx,ny;                 /* generic counters */
   const float c_sq = 1.0/3.0;  /* square of speed of sound */
