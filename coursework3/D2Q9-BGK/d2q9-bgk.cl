@@ -169,3 +169,42 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
    }
 }
 
+__kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __local float* scratch, __const int length, __global float* result) {
+  int global_index = get_global_id(0);
+  int kk;
+  float local_density;
+  float accumulator = 0;
+  // Loop sequentially over chunks of input vector
+  while (global_index < length) {
+    if (!obstacles[global_index]) {
+      /* local density total */
+     local_density = 0.0;
+     for(kk=0;kk<NSPEEDS;kk++) {
+        local_density += cells[global_index].speeds[kk];
+      }
+      /* x-component of velocity */
+      accumulator += (cells[global_index].speeds[1] +
+                  cells[global_index].speeds[5] +
+                  cells[global_index].speeds[8]
+                  - (cells[global_index].speeds[3] +
+                     cells[global_index].speeds[6] +
+                     cells[global_index].speeds[7])) /
+        local_density;
+    }
+    global_index += get_global_size(0);
+  }
+
+  // Perform parallel reduction
+  int local_index = get_local_id(0);
+  scratch[local_index] = accumulator;
+  barrier(CLK_LOCAL_MEM_FENCE);
+  for(int offset = get_local_size(0) / 2; offset > 0; offset = offset / 2) {
+    if (local_index < offset) {
+      scratch[local_index] += scratch[local_index + offset];
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+  }
+  if (local_index == 0) {
+    result[get_group_id(0)] = scratch[0];
+  }
+}

@@ -394,7 +394,6 @@ float av_velocity(const t_param params, std::vector<t_speed> & cells, std::vecto
                        cells[ii*params.nx + jj].speeds[6] +
                        cells[ii*params.nx + jj].speeds[7])) /
           local_density;
-        /* increase counter of inspected cells */
       }
     }
   }
