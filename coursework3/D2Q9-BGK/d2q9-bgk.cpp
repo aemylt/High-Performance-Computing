@@ -113,10 +113,10 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
 float total_density(const t_param params, std::vector<t_speed> & cells);
 
 /* compute average velocity */
-float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue);
+float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue);
 
 /* calculate Reynolds number */
-float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue);
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -379,17 +379,13 @@ float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf,
 {
   int ii;
   std::vector<float> results(NGROUPS);
-  float tot_u_x = 0;
   auto reduce = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(sum_velocity);
   auto second_reduce = cl::make_kernel<cl::LocalSpaceArg, int, cl::Buffer>(second_sum);
   reduce(cl::EnqueueArgs(queue, cl::NDRange(NGROUPS * NUNITS), cl::NDRange(NUNITS)), cell_buf, obs_buf, cl::Local(sizeof(float) * NUNITS), params.nx * params.ny, loc_vel);
-  second_reduce(cl::EnqueueArgs(queue, cl::NDRange(NUNITS), cl::NDRange(NUNITS)), cell_buf, obs_buf, cl::Local(sizeof(float)), NGROUPS, loc_vel);
+  second_reduce(cl::EnqueueArgs(queue, cl::NDRange(NUNITS), cl::NDRange(NUNITS)), cl::Local(sizeof(float) * NUNITS), NGROUPS, loc_vel);
   cl::copy(queue, loc_vel, begin(results), end(results));
-  for (int ii = 0; ii < NGROUPS; ii++) {
-      tot_u_x += results[ii];
-  }
 
-  return tot_u_x / (float)params.tot_cells;
+  return results[0] / (float)params.tot_cells;
 }
 
 float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue)
