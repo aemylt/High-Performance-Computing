@@ -163,7 +163,8 @@ int main(int argc, char* argv[])
 
       // Load in kernel source, creating a program object for the context
 
-      cl::Program program(context, util::loadProgram("d2q9-bgk.cl"), true);
+      cl::Program program(context, util::loadProgram("d2q9-bgk.cl"));
+      program.build(context.getInfo<CL_CONTEXT_DEVICES>());
 
       // Get the command queue
       cl::CommandQueue queue(context);
