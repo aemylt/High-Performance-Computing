@@ -67,7 +67,7 @@ __kernel void propagate(__global t_speed *cells, __global t_speed *tmp_cells)
 
 __kernel void rebound_or_collision(const float omega, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
 {
-  int ii,jj,kk,nx,ny;                 /* generic counters */
+  int ii,kk;                 /* generic counters */
   const float c_sq = 1.0/3.0;  /* square of speed of sound */
   const float w0 = 4.0/9.0;    /* weighting factor */
   const float w1 = 1.0/9.0;    /* weighting factor */
@@ -79,13 +79,11 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
   float local_density;         /* sum of densities in a particular cell */
 
   ii = get_global_id(0);
-  jj = get_global_id(1);
-  nx = get_global_size(1);
 
   t_speed tmp;
   t_speed cell;
   for (kk = 0; kk < NSPEEDS; kk++) {
-      tmp.speeds[kk] = tmp_cells[ii*nx + jj].speeds[kk];
+      tmp.speeds[kk] = tmp_cells[ii].speeds[kk];
   }
 
   /* loop over the cells in the grid
@@ -93,7 +91,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
   ** the propagate step and so values of interest
   ** are in the scratch-space grid */
   /* if the cell contains an obstacle */
-  if(obstacles[ii*nx + jj]) {
+  if(obstacles[ii]) {
       /* called after propagate, so taking values from scratch space
       ** mirroring, and writing into main grid */
       cell.speeds[1] = tmp.speeds[3];
@@ -174,7 +172,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
       }
    }
    for (kk = 0; kk < NSPEEDS; kk++) {
-       cells[ii * nx + jj].speeds[kk] = cell.speeds[kk];
+       cells[ii].speeds[kk] = cell.speeds[kk];
    }
 }
 
