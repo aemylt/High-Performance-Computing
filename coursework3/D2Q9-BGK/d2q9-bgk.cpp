@@ -86,11 +86,6 @@ typedef struct {
   float omega;         /* relaxation parameter */
 } t_param;
 
-/* struct to hold the 'speed' values */
-typedef struct {
-  float speeds[NSPEEDS];
-} t_speed;
-
 enum boolean { FALSE, TRUE };
 
 /*
@@ -99,18 +94,18 @@ enum boolean { FALSE, TRUE };
 
 /* load params, allocate memory, load obstacles & initialise fluid particle densities */
 int initialise(const char* paramfile, const char* obstaclefile,
-               t_param* params, std::vector<t_speed> & cells_ptr,
+               t_param* params, std::vector<float> & cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
 int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float* av_vels);
 
 /* finalise, including freeing up allocated memory */
-int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
+int finalise(const t_param* params, std::vector<float> & cells_ptr,
              std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
 /* Sum all the densities in the grid.
 ** The total should remain constant from one timestep to the next. */
-float total_density(const t_param params, std::vector<t_speed> & cells);
+float total_density(const t_param params, std::vector<float> & cells);
 
 /* compute average velocity */
 float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Buffer loc_vel, cl::CommandQueue queue);
@@ -131,7 +126,7 @@ int main(int argc, char* argv[])
   char*    paramfile;         /* name of the input parameter file */
   char*    obstaclefile;      /* name of a the input obstacle file */
   t_param  params;            /* struct to hold parameter values */
-  std::vector<t_speed> cells;  /* grid containing fluid densities */
+  std::vector<float> cells;  /* grid containing fluid densities */
   cl::Buffer cell_buf;
   cl::Buffer tmp_buf;
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
@@ -175,7 +170,7 @@ int main(int argc, char* argv[])
       auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
       cl::Kernel sum_velocity(program, "sum_velocity");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
-      tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
+      tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NSPEEDS * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
 
       /* iterate for maxIters timesteps */
@@ -226,7 +221,7 @@ int main(int argc, char* argv[])
 }
 
 int initialise(const char* paramfile, const char* obstaclefile,
-               t_param* params, std::vector<t_speed> & cells_ptr,
+               t_param* params, std::vector<float> & cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr)
 {
   char   message[1024];  /* message buffer */
@@ -236,6 +231,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   int    blocked;        /* indicates whether a cell is blocked by an obstacle */ 
   int    retval;         /* to hold return value for checking */
   float w0,w1,w2;       /* weighting factors */
+  int size;
 
   /* open the parameter file */
   fp = fopen(paramfile,"r");
@@ -284,7 +280,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   */
 
   /* main grid */
-  cells_ptr.resize(params->ny*params->nx);
+  cells_ptr.resize(params->ny*params->nx*NSPEEDS);
   if (cells_ptr.size() == 0) 
     die("cannot allocate memory for cells",__LINE__,__FILE__);
 
@@ -297,21 +293,22 @@ int initialise(const char* paramfile, const char* obstaclefile,
   w0 = params->density * 4.0/9.0;
   w1 = params->density      /9.0;
   w2 = params->density      /36.0;
+  size = params->nx * params->ny;
 
   for(ii=0;ii<params->ny;ii++) {
     for(jj=0;jj<params->nx;jj++) {
       /* centre */
-      (cells_ptr)[ii*params->nx + jj].speeds[0] = w0;
+      (cells_ptr)[ii*params->nx + jj] = w0;
       /* axis directions */
-      (cells_ptr)[ii*params->nx + jj].speeds[1] = w1;
-      (cells_ptr)[ii*params->nx + jj].speeds[2] = w1;
-      (cells_ptr)[ii*params->nx + jj].speeds[3] = w1;
-      (cells_ptr)[ii*params->nx + jj].speeds[4] = w1;
+      (cells_ptr)[size + ii*params->nx + jj] = w1;
+      (cells_ptr)[size * 2 + ii*params->nx + jj] = w1;
+      (cells_ptr)[size * 3 + ii*params->nx + jj] = w1;
+      (cells_ptr)[size * 4 + ii*params->nx + jj] = w1;
       /* diagonals */
-      (cells_ptr)[ii*params->nx + jj].speeds[5] = w2;
-      (cells_ptr)[ii*params->nx + jj].speeds[6] = w2;
-      (cells_ptr)[ii*params->nx + jj].speeds[7] = w2;
-      (cells_ptr)[ii*params->nx + jj].speeds[8] = w2;
+      (cells_ptr)[size * 5 + ii*params->nx + jj] = w2;
+      (cells_ptr)[size * 6 + ii*params->nx + jj] = w2;
+      (cells_ptr)[size * 7 + ii*params->nx + jj] = w2;
+      (cells_ptr)[size * 8 + ii*params->nx + jj] = w2;
     }
   }
 
@@ -363,7 +360,7 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
   /* 
   ** free up allocated memory
   */
-  std::vector<t_speed>().swap(cells_ptr);
+  std::vector<float>().swap(cells_ptr);
 
   std::vector<int>().swap(obstacles_ptr);
 
@@ -399,11 +396,12 @@ float total_density(const t_param params, std::vector<t_speed> & cells)
 {
   int ii,jj,kk;        /* generic counters */
   float total = 0.0;  /* accumulator */
+  int size = params.nx * params.ny;
 
   for(ii=0;ii<params.ny;ii++) {
     for(jj=0;jj<params.nx;jj++) {
       for(kk=0;kk<NSPEEDS;kk++) {
-        total += cells[ii*params.nx + jj].speeds[kk];
+        total += cells[kk*size + ii*params.nx + jj];
       }
     }
   }
@@ -420,6 +418,7 @@ int write_values(const t_param params, std::vector<t_speed> & cells, std::vector
   float pressure;              /* fluid pressure in grid cell */
   float u_x;                   /* x-component of velocity in grid cell */
   float u_y;                   /* y-component of velocity in grid cell */
+  int size = params.nx * params.ny;
 
   fp = fopen(FINALSTATEFILE,"w");
   if (fp == NULL) {
@@ -437,23 +436,23 @@ int write_values(const t_param params, std::vector<t_speed> & cells, std::vector
       else {
         local_density = 0.0;
         for(kk=0;kk<NSPEEDS;kk++) {
-          local_density += cells[ii*params.nx + jj].speeds[kk];
+          local_density += cells[size*kk + ii*params.nx + jj];
         }
         /* compute x velocity component */
-        u_x = (cells[ii*params.nx + jj].speeds[1] +
-               cells[ii*params.nx + jj].speeds[5] +
-               cells[ii*params.nx + jj].speeds[8]
-               - (cells[ii*params.nx + jj].speeds[3] +
-                  cells[ii*params.nx + jj].speeds[6] +
-                  cells[ii*params.nx + jj].speeds[7]))
+        u_x = (cells[size + ii*params.nx + jj] +
+               cells[size * 5 + ii*params.nx + jj] +
+               cells[size * 8 + ii*params.nx + jj]
+               - (cells[size * 3 + ii*params.nx + jj] +
+                  cells[size * 6 + ii*params.nx + jj] +
+                  cells[size * 7 + ii*params.nx + jj]))
           / local_density;
         /* compute y velocity component */
-        u_y = (cells[ii*params.nx + jj].speeds[2] +
-               cells[ii*params.nx + jj].speeds[5] +
-               cells[ii*params.nx + jj].speeds[6]
-               - (cells[ii*params.nx + jj].speeds[4] +
-                  cells[ii*params.nx + jj].speeds[7] +
-                  cells[ii*params.nx + jj].speeds[8]))
+        u_y = (cells[size * 2 + ii*params.nx + jj] +
+               cells[size * 5 + ii*params.nx + jj] +
+               cells[size * 6 + ii*params.nx + jj]
+               - (cells[size * 4 + ii*params.nx + jj] +
+                  cells[size * 7 + ii*params.nx + jj] +
+                  cells[size * 8 + ii*params.nx + jj]))
           / local_density;
         /* compute pressure */
         pressure = local_density * c_sq;
