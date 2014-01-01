@@ -171,7 +171,7 @@ __kernel void rebound_or_collision(const float omega, __global float *cells, __g
    }
 }
 
-__kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __local float* scratch, __const int length, __global float* result) {
+__kernel void sum_velocity(__global float *cells, global int *obstacles, __local float* scratch, __const int length, __global float* result) {
   int global_index = get_global_id(0);
   int kk;
   float local_density;
