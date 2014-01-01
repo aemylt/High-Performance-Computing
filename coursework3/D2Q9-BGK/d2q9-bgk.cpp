@@ -171,8 +171,7 @@ int main(int argc, char* argv[])
 
       // Create the kernel functor
  
-      auto accelerate_flow = cl::make_kernel<int, float, float, cl::Buffer, cl::Buffer>(program, "accelerate_flow");
-      auto propagate = cl::make_kernel<cl::Buffer, cl::Buffer>(program, "propagate");
+      auto accelerate_flow_and_propagate = cl::make_kernel<float, float, cl::Buffer, cl::Buffer, cl:Buffer>(program, "accelerate_flow_and_propagate");
       auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
       cl::Kernel sum_velocity(program, "sum_velocity");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
