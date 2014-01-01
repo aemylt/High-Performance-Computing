@@ -184,8 +184,7 @@ int main(int argc, char* argv[])
       cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
     
       for (ii=0;ii<params.maxIters;ii++) {
-        accelerate_flow(cl::EnqueueArgs(queue, cl::NDRange(params.ny)), params.nx, params.density, params.accel, cell_buf, obs_buf);
-        propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)),cell_buf,tmp_buf);
+        accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
         cl::copy(queue, cell_buf, begin(cells), end(cells));
         cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
