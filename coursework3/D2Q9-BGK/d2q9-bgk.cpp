@@ -97,7 +97,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
                t_param* params, std::vector<float> & cells_ptr,
                std::vector<int> & obstacles_ptr, float** av_vels_ptr);
 
-int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float* av_vels);
+int write_values(const t_param params, std::vector<float> & cells, std::vector<int> & obstacles, float* av_vels);
 
 /* finalise, including freeing up allocated memory */
 int finalise(const t_param* params, std::vector<float> & cells_ptr,
@@ -159,7 +159,22 @@ int main(int argc, char* argv[])
       // Load in kernel source, creating a program object for the context
 
       cl::Program program(context, util::loadProgram("d2q9-bgk.cl"));
-      program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable");
+      try
+      {
+          program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable");
+      }
+      catch (cl::Error error)
+      {
+         // If it was a build error then show the error
+         if (error.err() == CL_BUILD_PROGRAM_FAILURE)
+          {
+              std::vector<cl::Device> devices;
+              devices = context.getInfo<CL_CONTEXT_DEVICES>();
+              std::string built = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+              std::cerr << built << "\n";
+          }
+          throw error;
+      }
 
       // Get the command queue
       cl::CommandQueue queue(context);
@@ -207,22 +222,14 @@ int main(int argc, char* argv[])
       write_values(params,cells,obstacles,av_vels);
       finalise(&params, cells, obstacles, &av_vels);
   } catch (cl::Error err) {
-       if (error.err() == CL_BUILD_PROGRAM_FAILURE)
-       {
-           std::vector<cl::Device> devices;
-           devices = context.getInfo<CL_CONTEXT_DEVICES>();
-           std::string built = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
-           std::cerr << built << "\n";
-       } else {
-           std::cout << "Exception\n";
-           std::cerr 
-                << "ERROR: "
-                << err.what()
-                << "("
-                << err_code(err.err())
-                << ")"
-                << std::endl;
-       }
+        std::cout << "Exception\n";
+        std::cerr 
+            << "ERROR: "
+            << err.what()
+            << "("
+            << err_code(err.err())
+            << ")"
+            << std::endl;
   }
   
   return EXIT_SUCCESS;
@@ -362,7 +369,7 @@ int initialise(const char* paramfile, const char* obstaclefile,
   return EXIT_SUCCESS;
 }
 
-int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
+int finalise(const t_param* params, std::vector<float> & cells_ptr,
              std::vector<int> & obstacles_ptr, float** av_vels_ptr)
 {
   /* 
@@ -417,7 +424,7 @@ float total_density(const t_param params, std::vector<t_speed> & cells)
   return total;
 }
 
-int write_values(const t_param params, std::vector<t_speed> & cells, std::vector<int> & obstacles, float *av_vels)
+int write_values(const t_param params, std::vector<float> & cells, std::vector<int> & obstacles, float *av_vels)
 {
   FILE* fp;                     /* file pointer */
   int ii,jj,kk;                 /* generic counters */
