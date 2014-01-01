@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
       cl::Program program(context, util::loadProgram("d2q9-bgk.cl"));
       try
       {
-          program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable -cl-strict-aliasing -Werror");
+          program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable");
       }
       catch (cl::Error error)
       {
@@ -407,7 +407,7 @@ float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_bu
   return av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel, queue) * params.reynolds_dim / viscosity;
 }
 
-float total_density(const t_param params, std::vector<float> & cells)
+float total_density(const t_param params, std::vector<t_speed> & cells)
 {
   int ii,jj,kk;        /* generic counters */
   float total = 0.0;  /* accumulator */
