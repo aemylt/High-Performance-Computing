@@ -207,14 +207,22 @@ int main(int argc, char* argv[])
       write_values(params,cells,obstacles,av_vels);
       finalise(&params, cells, obstacles, &av_vels);
   } catch (cl::Error err) {
-		std::cout << "Exception\n";
-		std::cerr 
-            << "ERROR: "
-            << err.what()
-            << "("
-            << err_code(err.err())
-            << ")"
-            << std::endl;
+       if (error.err() == CL_BUILD_PROGRAM_FAILURE)
+       {
+           std::vector<cl::Device> devices;
+           devices = context.getInfo<CL_CONTEXT_DEVICES>();
+           std::string built = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+           std::cerr << built << "\n";
+       } else {
+           std::cout << "Exception\n";
+           std::cerr 
+                << "ERROR: "
+                << err.what()
+                << "("
+                << err_code(err.err())
+                << ")"
+                << std::endl;
+       }
   }
   
   return EXIT_SUCCESS;
