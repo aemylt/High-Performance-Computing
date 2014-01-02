@@ -186,8 +186,6 @@ int main(int argc, char* argv[])
       for (ii=0;ii<params.maxIters;ii++) {
         accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny * params.nx), cl::NDRange(params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
-        cl::copy(queue, cell_buf, begin(cells), end(cells));
-        cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
         av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
@@ -203,6 +201,7 @@ int main(int argc, char* argv[])
       timstr=ru.ru_stime;        
       systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
     
+      cl::copy(queue, cell_buf, begin(cells), end(cells));
       /* write final values and free memory */
       printf("==done==\n");
       printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue));
