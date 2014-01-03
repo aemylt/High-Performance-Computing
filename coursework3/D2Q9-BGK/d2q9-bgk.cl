@@ -78,7 +78,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
 
   ii = get_global_id(0);
   jj = get_global_id(1);
-  nx = get_global_id(1);
+  nx = get_global_size(1);
 
   t_speed tmp;
   t_speed cell;
