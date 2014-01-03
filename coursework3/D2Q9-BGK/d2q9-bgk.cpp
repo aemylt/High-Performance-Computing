@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
     
       for (ii=0;ii<params.maxIters;ii++) {
         accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
-        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny * params.nx), cl::NDRange(params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
+        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
         av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
