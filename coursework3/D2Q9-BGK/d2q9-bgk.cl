@@ -8,15 +8,18 @@ typedef struct {
 
 __kernel void accelerate_flow_and_propagate(const float density, const float accel, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
 {
+  int ii,jj,kk,nx,ny;            /* generic counters */
+  int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
+  float w1,w2;  /* weighting factors */
   t_speed cell;
-  const int ii = get_global_id(0);
-  const int jj = get_global_id(1);
-  const int ny = get_global_size(0);
-  const int nx = get_global_size(1);
+  ii = get_global_id(0);
+  jj = get_global_id(1);
+  ny = get_global_size(0);
+  nx = get_global_size(1);
   
   /* compute weighting factors */
-  const float w1 = density * accel / 9.0;
-  const float w2 = density * accel / 36.0;
+  w1 = density * accel / 9.0;
+  w2 = density * accel / 36.0;
 
   for (kk = 0; kk < NSPEEDS; kk++) {
     cell.speeds[kk] = cells[ii * nx + jj].speeds[kk];
@@ -41,10 +44,10 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
 
   /* determine indices of axis-direction neighbours
   ** respecting periodic boundary conditions (wrap around) */
-  const int y_n = (ii + 1) % ny;
-  const int x_e = (jj + 1) % nx;
-  const int y_s = (ii == 0) ? (ii + ny - 1) : (ii - 1);
-  const int x_w = (jj == 0) ? (jj + nx - 1) : (jj - 1);
+  y_n = (ii + 1) % ny;
+  x_e = (jj + 1) % nx;
+  y_s = (ii == 0) ? (ii + ny - 1) : (ii - 1);
+  x_w = (jj == 0) ? (jj + nx - 1) : (jj - 1);
   /* propagate densities to neighbouring cells, following
   ** appropriate directions of travel and writing into
   ** scratch space grid */
@@ -62,7 +65,8 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
 
 __kernel void rebound_or_collision(const float omega, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
 {
-  int kk;                 /* generic counters */
+  int ii,jj,kk;                 /* generic counters */
+  int nx;
   const float c_sq = 1.0/3.0;  /* square of speed of sound */
   const float w0 = 4.0/9.0;    /* weighting factor */
   const float w1 = 1.0/9.0;    /* weighting factor */
@@ -72,9 +76,9 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
   float u_sq;                  /* squared velocity */
   float local_density;         /* sum of densities in a particular cell */
 
-  const int ii = get_global_id(0);
-  const int jj = get_global_id(1);
-  const int nx = get_global_size(1);
+  ii = get_global_id(0);
+  jj = get_global_id(1);
+  nx = get_global_size(1);
 
   t_speed tmp;
   t_speed cell;
