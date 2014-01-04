@@ -71,7 +71,7 @@
 #define DEVICE CL_DEVICE_TYPE_DEFAULT
 #endif
 
-#define NGROUPS 64
+#define NGROUPS 100
 #define NUNITS  32
 
 /* struct to hold the parameter values */
