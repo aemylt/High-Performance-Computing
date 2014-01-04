@@ -72,7 +72,7 @@
 #endif
 
 #define NGROUPS 64
-#define NUNITS  16
+#define NUNITS  32
 
 /* struct to hold the parameter values */
 typedef struct {
