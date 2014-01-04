@@ -177,15 +177,16 @@ int main(int argc, char* argv[])
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
+      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
+      const int work_size = params.nx/5;
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
-      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
     
       for (ii=0;ii<params.maxIters;ii++) {
-        accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
-        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, params.nx)),params.omega,cell_buf,tmp_buf,obs_buf);
+        accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
+        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)),params.omega,cell_buf,tmp_buf,obs_buf);
         av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
