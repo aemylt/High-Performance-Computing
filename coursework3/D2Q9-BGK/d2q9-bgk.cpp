@@ -164,7 +164,22 @@ int main(int argc, char* argv[])
       // Load in kernel source, creating a program object for the context
 
       cl::Program program(context, util::loadProgram("d2q9-bgk.cl"));
-      program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable");
+       try
+       {
+           program.build(context.getInfo<CL_CONTEXT_DEVICES>(), "-cl-mad-enable");
+       }
+       catch (cl::Error error)
+       {
+          // If it was a build error then show the error
+          if (error.err() == CL_BUILD_PROGRAM_FAILURE)
+           {
+               std::vector<cl::Device> devices;
+               devices = context.getInfo<CL_CONTEXT_DEVICES>();
+               std::string built = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+               std::cerr << built << "\n";
+           }
+           throw error;
+       }
 
       // Get the command queue
       cl::CommandQueue queue(context);
