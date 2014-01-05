@@ -216,7 +216,7 @@ __kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __loc
   }
 }
 
-__kernel void second_sum(__local float* scratch, __const int length, __global float* result) {
+__kernel void second_sum(__local float* scratch, __const int length, __global float* result, __global float* result2) {
   int global_index = get_global_id(0);
   float local_density;
   float accumulator = 0;
@@ -237,6 +237,6 @@ __kernel void second_sum(__local float* scratch, __const int length, __global fl
     barrier(CLK_LOCAL_MEM_FENCE);
   }
   if (local_index == 0) {
-    result[get_group_id(0)] = scratch[0];
+    result2[0] = scratch[0];
   }
 }

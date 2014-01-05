@@ -113,10 +113,10 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
 float total_density(const t_param params, std::vector<t_speed> & cells);
 
 /* compute average velocity */
-float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue);
+float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::Buffer loc_vel2 , cl::CommandQueue queue);
 
 /* calculate Reynolds number */
-float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue);
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::Buffer loc_vel2, cl::CommandQueue queue);
 
 /* utility functions */
 void die(const char* message, const int line, const char *file);
@@ -137,6 +137,7 @@ int main(int argc, char* argv[])
   std::vector<int> obstacles;  /* grid indicating which cells are blocked */
   cl::Buffer obs_buf;
   cl::Buffer loc_vel;
+  cl::Buffer loc_vel2;
   float*  av_vels   = NULL;  /* a record of the av. velocity computed for each timestep */
   int      ii;                /* generic counter */
   struct timeval timstr;      /* structure to hold elapsed time */
@@ -193,6 +194,7 @@ int main(int argc, char* argv[])
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
+      loc_vel2 = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float));
       cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
       const int work_size = params.nx/5;
 
@@ -203,7 +205,7 @@ int main(int argc, char* argv[])
       for (ii=0;ii<params.maxIters;ii++) {
         accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
         rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)),params.omega,cell_buf,tmp_buf,obs_buf);
-        av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel,queue);
+        av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel,loc_vel2,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
         printf("av velocity: %.12E\n", av_vels[ii]);
@@ -221,7 +223,7 @@ int main(int argc, char* argv[])
       cl::copy(queue, cell_buf, begin(cells), end(cells));
       /* write final values and free memory */
       printf("==done==\n");
-      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel,queue));
+      printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel,loc_vel2,queue));
       printf("Elapsed time:\t\t\t%.6lf (s)\n", toc-tic);
       printf("Elapsed user CPU time:\t\t%.6lf (s)\n", usrtim);
       printf("Elapsed system CPU time:\t%.6lf (s)\n", systim);
@@ -389,25 +391,26 @@ int finalise(const t_param* params, std::vector<t_speed> & cells_ptr,
   return EXIT_SUCCESS;
 }
 
-float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue)
+float av_velocity(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::Buffer loc_vel2, cl::CommandQueue queue)
 {
   int ii;
-  std::vector<float> results(NGROUPS);
+  std::vector<float> results(1);
+  std::vector<float>::iterator it = begin(results);
   float tot_u_x = 0;
   auto reduce = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(sum_velocity);
-  auto reduce2 = cl::make_kernel<cl::LocalSpaceArg, int, cl::Buffer>(second_sum);
+  auto reduce2 = cl::make_kernel<cl::LocalSpaceArg, int, cl::Buffer, cl::Buffer>(second_sum);
   reduce(cl::EnqueueArgs(queue, cl::NDRange(NGROUPS * NUNITS), cl::NDRange(NUNITS)), cell_buf, obs_buf, cl::Local(sizeof(float) * NUNITS), params.nx * params.ny, loc_vel);
-  reduce2(cl::EnqueueArgs(queue, cl::NDRange(NUNITS), cl::NDRange(NUNITS)), cl::Local(sizeof(float) * NUNITS), NGROUPS, loc_vel);
-  cl::copy(queue, loc_vel, begin(results), begin(results));
+  reduce2(cl::EnqueueArgs(queue, cl::NDRange(NUNITS), cl::NDRange(NUNITS)), cl::Local(sizeof(float) * NUNITS), NGROUPS, loc_vel, loc_vel2);
+  cl::copy(queue, loc_vel2, begin(results), ++it);
 
-  return results[1] / (float)params.tot_cells;
+  return results[0] / (float)params.tot_cells;
 }
 
-float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::CommandQueue queue)
+float calc_reynolds(const t_param params, cl::Buffer cell_buf, cl::Buffer obs_buf, cl::Kernel sum_velocity, cl::Kernel second_sum, cl::Buffer loc_vel, cl::Buffer loc_vel2, cl::CommandQueue queue)
 {
   const float viscosity = 1.0 / 6.0 * (2.0 / params.omega - 1.0);
   
-  return av_velocity(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel, queue) * params.reynolds_dim / viscosity;
+  return av_velocity(params,cell_buf,obs_buf,sum_velocity,second_sum,loc_vel,loc_vel2, queue) * params.reynolds_dim / viscosity;
 }
 
 float total_density(const t_param params, std::vector<t_speed> & cells)
