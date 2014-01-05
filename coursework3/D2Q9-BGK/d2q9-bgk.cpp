@@ -194,7 +194,6 @@ int main(int argc, char* argv[])
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
       cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
       const int work_size = params.nx/5;
-      const int problem_size = params.ny * params.nx;
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
@@ -202,7 +201,7 @@ int main(int argc, char* argv[])
     
       for (ii=0;ii<params.maxIters;ii++) {
         accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
-        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(problem_size), cl::NDRange(work_size)),params.omega,cell_buf,tmp_buf,obs_buf);
+        rebound_or_collision(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)),params.omega,cell_buf,tmp_buf,obs_buf);
         av_vels[ii] = av_velocity(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue);
     #ifdef DEBUG
         printf("==timestep: %d==\n",ii);
