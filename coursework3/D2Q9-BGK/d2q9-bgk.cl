@@ -201,13 +201,18 @@ __kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __loc
     global_index += get_global_size(0);
   }
 
-  // Perform parallel reduction
   int local_index = get_local_id(0);
   scratch[local_index] = accumulator;
+
   barrier(CLK_LOCAL_MEM_FENCE);
-  for(int offset = get_local_size(0) / 2; offset > 0; offset = offset / 2) {
-    if (local_index < offset) {
-      scratch[local_index] += scratch[local_index + offset];
+  for(int offset = 1;
+      offset < get_local_size(0);
+      offset <<= 1) {
+    int mask = (offset << 1) - 1;
+    if ((local_index & mask) == 0) {
+      float other = scratch[local_index + offset];
+      float mine = scratch[local_index];
+      scratch[local_index] = (mine < other) ? mine : other;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
   }
