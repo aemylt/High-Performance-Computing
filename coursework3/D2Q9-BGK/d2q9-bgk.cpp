@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
-      cell_buf = cl::Buffer(context, CL_MEM_ALLOC_HOST_PTR, sizeof(t_speed) * params.nx * params.ny, cells);
+      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
       const int work_size = params.nx/5;
 
       /* iterate for maxIters timesteps */
