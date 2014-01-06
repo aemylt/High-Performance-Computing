@@ -174,7 +174,7 @@ __kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __loc
   // Loop sequentially over chunks of input vector
   while (global_index < length) {
     for(kk=0;kk<NSPEEDS;kk++) {
-      cell = cells[global_index].speeds[kk];
+      cell.speeds[kk] = cells[global_index].speeds[kk];
     }
     /* local density total */
     local_density = 0.0;
@@ -189,7 +189,6 @@ __kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __loc
                    cell.speeds[6] +
                    cell.speeds[7])) /
       local_density;
-    }
     global_index += get_global_size(0);
   }
 
