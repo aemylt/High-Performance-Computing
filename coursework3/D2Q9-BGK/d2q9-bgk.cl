@@ -11,7 +11,7 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
   int ii,jj,kk,nx,ny;            /* generic counters */
   int x_e,x_w,y_n,y_s;  /* indices of neighbouring cells */
   float w1,w2;  /* weighting factors */
-  float cell[6];
+  t_speed cell;
   ii = get_global_id(0);
   jj = get_global_id(1);
   ny = get_global_size(0);
@@ -21,28 +21,25 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
   w1 = native_divide(density * accel, 9.0);
   w2 = native_divide(density * accel, 36.0);
 
-  cell[0] = cells[ii * nx + jj].speeds[1];
-  cell[1] = cells[ii * nx + jj].speeds[5];
-  cell[2] = cells[ii * nx + jj].speeds[8];
-  cell[3] = cells[ii * nx + jj].speeds[3];
-  cell[4] = cells[ii * nx + jj].speeds[6];
-  cell[5] = cells[ii * nx + jj].speeds[7];
+  for (kk = 0; kk < NSPEEDS; kk++) {
+    cell.speeds[kk] = cells[ii * nx + jj].speeds[kk];
+  }
 
   /* if the cell is not occupied and
   ** we don't send a density negative */
   if( jj == 0 &&
       !obstacles[ii*nx + jj] && 
-      cell[3] > w1 &&
-      cell[4] > w2 &&
-      cell[5] > w2 ) {
+      (cell.speeds[3] - w1) > 0.0 &&
+      (cell.speeds[6] - w2) > 0.0 &&
+      (cell.speeds[7] - w2) > 0.0 ) {
     /* increase 'east-side' densities */
-    cell[0] += w1;
-    cell[1] += w2;
-    cell[2] += w2;
+    cell.speeds[1] += w1;
+    cell.speeds[5] += w2;
+    cell.speeds[8] += w2;
     /* decrease 'west-side' densities */
-    cell[3] -= w1;
-    cell[4] -= w2;
-    cell[5] -= w2;
+    cell.speeds[3] -= w1;
+    cell.speeds[6] -= w2;
+    cell.speeds[7] -= w2;
   }
 
   /* determine indices of axis-direction neighbours
@@ -54,16 +51,16 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
   /* propagate densities to neighbouring cells, following
   ** appropriate directions of travel and writing into
   ** scratch space grid */
-  tmp_cells[ii *nx + jj].speeds[0]  = cells[ii * nx + jj].speeds[0]; /* central cell, */
+  tmp_cells[ii *nx + jj].speeds[0]  = cell.speeds[0]; /* central cell, */
                                                       /* no movement   */
-  tmp_cells[ii *nx + x_e].speeds[1] = cell[0]; /* east */
-  tmp_cells[y_n*nx + jj].speeds[2]  = cells[ii * nx + jj].speeds[2]; /* north */
-  tmp_cells[ii *nx + x_w].speeds[3] = cell[3]; /* west */
-  tmp_cells[y_s*nx + jj].speeds[4]  = cells[ii * nx + jj].speeds[4]; /* south */
-  tmp_cells[y_n*nx + x_e].speeds[5] = cell[1]; /* north-east */
-  tmp_cells[y_n*nx + x_w].speeds[6] = cell[4]; /* north-west */
-  tmp_cells[y_s*nx + x_w].speeds[7] = cell[5]; /* south-west */      
-  tmp_cells[y_s*nx + x_e].speeds[8] = cell[2]; /* south-east */   
+  tmp_cells[ii *nx + x_e].speeds[1] = cell.speeds[1]; /* east */
+  tmp_cells[y_n*nx + jj].speeds[2]  = cell.speeds[2]; /* north */
+  tmp_cells[ii *nx + x_w].speeds[3] = cell.speeds[3]; /* west */
+  tmp_cells[y_s*nx + jj].speeds[4]  = cell.speeds[4]; /* south */
+  tmp_cells[y_n*nx + x_e].speeds[5] = cell.speeds[5]; /* north-east */
+  tmp_cells[y_n*nx + x_w].speeds[6] = cell.speeds[6]; /* north-west */
+  tmp_cells[y_s*nx + x_w].speeds[7] = cell.speeds[7]; /* south-west */      
+  tmp_cells[y_s*nx + x_e].speeds[8] = cell.speeds[8]; /* south-east */   
 }
 
 __kernel void rebound_or_collision(const float omega, __global t_speed *cells, __global t_speed *tmp_cells, __global int *obstacles)
