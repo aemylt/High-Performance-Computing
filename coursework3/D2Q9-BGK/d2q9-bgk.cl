@@ -18,8 +18,8 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
   nx = get_global_size(1);
   
   /* compute weighting factors */
-  w1 = native_divide(density * accel, 9.0);
-  w2 = native_divide(density * accel, 36.0);
+  w1 = half_divide(density * accel, 9.0);
+  w2 = half_divide(density * accel, 36.0);
 
   for (kk = 0; kk < NSPEEDS; kk++) {
     cell.speeds[kk] = cells[ii * nx + jj].speeds[kk];
@@ -109,7 +109,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
         local_density += tmp.speeds[kk];
       }
       /* compute x velocity component */
-      u_x = native_divide((tmp.speeds[1] +
+      u_x = half_divide((tmp.speeds[1] +
                tmp.speeds[5] +
                tmp.speeds[8]
                - (tmp.speeds[3] +
@@ -117,7 +117,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
                   tmp.speeds[7]))
         , local_density);
       /* compute y velocity component */
-      u_y = native_divide((tmp.speeds[2] +
+      u_y = half_divide((tmp.speeds[2] +
                tmp.speeds[5] +
                tmp.speeds[6]
                - (tmp.speeds[4] +
