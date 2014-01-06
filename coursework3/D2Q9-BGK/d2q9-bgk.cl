@@ -21,9 +21,7 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
   w1 = native_divide(density * accel, 9.0);
   w2 = native_divide(density * accel, 36.0);
 
-  for (kk = 0; kk < NSPEEDS; kk++) {
-    cell.speeds[kk] = cells[ii * nx + jj].speeds[kk];
-  }
+  cell = cells[ii * nx + jj];
 
   /* if the cell is not occupied and
   ** we don't send a density negative */
@@ -82,9 +80,7 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
 
   t_speed tmp;
   t_speed cell;
-  for (kk = 0; kk < NSPEEDS; kk++) {
-      tmp.speeds[kk] = tmp_cells[ii * nx + jj].speeds[kk];
-  }
+  tmp = tmp_cells[ii * nx + jj];
 
   /* loop over the cells in the grid
   ** NB the collision step is called after
@@ -171,31 +167,31 @@ __kernel void rebound_or_collision(const float omega, __global t_speed *cells, _
                            (u[kk] - tmp.speeds[kk]));
       }
    }
-   for (kk = 0; kk < NSPEEDS; kk++) {
-       cells[ii * nx + jj].speeds[kk] = cell.speeds[kk];
-   }
+   cells[ii * nx + jj] = cell;
 }
 
 __kernel void sum_velocity(__global t_speed *cells, global int *obstacles, __local float* scratch, __const int length, __global float* result) {
   int global_index = get_global_id(0);
   int kk;
   float local_density;
+  t_speed cell;
   float accumulator = 0;
   // Loop sequentially over chunks of input vector
   while (global_index < length) {
     if (!obstacles[global_index]) {
        /* local density total */
       local_density = 0.0;
+      cell = cells[global_index];
       for(kk=0;kk<NSPEEDS;kk++) {
-        local_density += cells[global_index].speeds[kk];
+        local_density += cell.speeds[kk];
       }
       /* x-component of velocity */
-      accumulator += (cells[global_index].speeds[1] +
-                  cells[global_index].speeds[5] +
-                  cells[global_index].speeds[8]
-                  - (cells[global_index].speeds[3] +
-                     cells[global_index].speeds[6] +
-                     cells[global_index].speeds[7])) /
+      accumulator += (cell.speeds[1] +
+                  cell.speeds[5] +
+                  cell.speeds[8]
+                  - (cell.speeds[3] +
+                     cell.speeds[6] +
+                     cell.speeds[7])) /
         local_density;
     }
     global_index += get_global_size(0);
