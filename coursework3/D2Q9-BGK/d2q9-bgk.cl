@@ -34,15 +34,15 @@ __kernel void accelerate_flow_and_propagate(const float density, const float acc
       !obstacles[ii*nx + jj] && 
       cell[3] > w1 &&
       cell[4] > w2 &&
-      cell[5] > w3 ) {
+      cell[5] > w2 ) {
     /* increase 'east-side' densities */
-    cell.speeds[0] += w1;
-    cell.speeds[1] += w2;
-    cell.speeds[2] += w2;
+    cell[0] += w1;
+    cell[1] += w2;
+    cell[2] += w2;
     /* decrease 'west-side' densities */
-    cell.speeds[3] -= w1;
-    cell.speeds[4] -= w2;
-    cell.speeds[5] -= w2;
+    cell[3] -= w1;
+    cell[4] -= w2;
+    cell[5] -= w2;
   }
 
   /* determine indices of axis-direction neighbours
