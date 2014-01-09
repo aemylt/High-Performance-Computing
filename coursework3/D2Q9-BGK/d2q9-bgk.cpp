@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
  
       auto accelerate_flow_and_propagate = cl::make_kernel<float, float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "accelerate_flow_and_propagate");
       auto rebound_or_collision = cl::make_kernel<float, cl::Buffer, cl::Buffer, cl::Buffer>(program, "rebound_or_collision");
-      auto sum_velocity = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(program, "su_velocioty");
+      auto sum_velocity = cl::make_kernel<cl::Buffer, cl::Buffer, cl::LocalSpaceArg, int, cl::Buffer>(program, "sum_velocity");
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
