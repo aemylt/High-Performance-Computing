@@ -192,13 +192,13 @@ int main(int argc, char* argv[])
       obs_buf = cl::Buffer(context, begin(obstacles), end(obstacles), true);
       tmp_buf = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(t_speed) * params.nx * params.ny);
       loc_vel = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(float) * NGROUPS);
-      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
       const int work_size = params.nx/5;
       float results[NGROUPS];
 
       /* iterate for maxIters timesteps */
       gettimeofday(&timstr,NULL);
       tic=timstr.tv_sec+(timstr.tv_usec/1000000.0);
+      cell_buf = cl::Buffer(context, begin(cells), end(cells), true);
     
       for (ii=0;ii<params.maxIters;ii++) {
         accelerate_flow_and_propagate(cl::EnqueueArgs(queue, cl::NDRange(params.ny, params.nx), cl::NDRange(1, work_size)), params.density, params.accel, cell_buf, tmp_buf, obs_buf);
@@ -210,6 +210,7 @@ int main(int argc, char* argv[])
         printf("tot density: %.12E\n",total_density(params,cells));
     #endif
       }
+      queue.enqueueReadBuffer(cell_buf, true, 0, sizeof(t_speed)*params.nx*params.ny, &cells[0]);
       gettimeofday(&timstr,NULL);
       toc=timstr.tv_sec+(timstr.tv_usec/1000000.0);
       getrusage(RUSAGE_SELF, &ru);
@@ -218,7 +219,6 @@ int main(int argc, char* argv[])
       timstr=ru.ru_stime;        
       systim=timstr.tv_sec+(timstr.tv_usec/1000000.0);
     
-      cl::copy(queue, cell_buf, begin(cells), end(cells));
       /* write final values and free memory */
       printf("==done==\n");
       printf("Reynolds number:\t\t%.12E\n",calc_reynolds(params,cell_buf,obs_buf,sum_velocity,loc_vel,queue, results));
